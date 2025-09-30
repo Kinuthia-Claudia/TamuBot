@@ -1,4 +1,4 @@
-
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -23,29 +23,74 @@ class AuthController extends StateNotifier<AuthState> {
 
   AuthController(this._client) : super(AuthState(isAuthenticated: false));
 
-  /// Sign up with email & password
-  Future<String?> signUp(String email, String password) async {
+  /// Sign up with email & password and create profile
+  Future<String?> signUp(
+    String email,
+    String password, {
+    String? username,
+    String? phone,
+  }) async {
     try {
+      print('🚀 Signup attempt:');
+      print('   Email: $email');
+      print('   Phone: $phone');
+      print('   Username: $username');
+
+      // Step 1: Create the user account
       final response = await _client.auth.signUp(
         email: email,
         password: password,
-        emailRedirectTo: 'io.testerapp://login-callback', // 👈 deep link
+        emailRedirectTo: 'tamubot://auth/callback',
       );
 
       if (response.user != null) {
-        // Email confirmation required → don't mark as logged in yet
+        print('✅ User created: ${response.user!.id}');
+        
+        // Step 2: Create user profile in profiles table
+        await _client.from('profiles').upsert({
+          'id': response.user!.id,
+          'username': username,
+          'phone': phone,
+          'email': email,
+          'created_at': DateTime.now().toIso8601String(),
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+
+        print('✅ Profile created in database');
+        print('📱 Phone saved to profiles: $phone');
+        
         return "Please check your email to confirm your account.";
       } else {
         return "Sign-up failed: No user returned.";
       }
     } on AuthException catch (e) {
+      print('❌ Auth error: ${e.message}');
       return e.message;
     } catch (e) {
+      print('❌ General error: $e');
       return e.toString();
     }
   }
 
-  /// Sign in with email & password
+  /// Get user phone number from profiles table
+  Future<String?> getUserPhone(String userId) async {
+    try {
+      final response = await _client
+          .from('profiles')
+          .select('phone')
+          .eq('id', userId)
+          .single();
+      
+      final phone = response['phone'] as String?;
+      print('📞 Retrieved phone from database: $phone for user: $userId');
+      return phone;
+    } catch (e) {
+      print('❌ Error getting user phone: $e');
+      return null;
+    }
+  }
+
+  /// Sign in with email & password + sends OTP if phone exists
   Future<String?> signIn(String email, String password) async {
     try {
       final response = await _client.auth.signInWithPassword(
@@ -54,8 +99,26 @@ class AuthController extends StateNotifier<AuthState> {
       );
 
       if (response.user != null) {
-        state = state.copyWith(isAuthenticated: true, user: response.user);
-        return null; // success
+        print('👤 User signed in: ${response.user!.id}');
+        
+        // Get phone from profiles table
+        final phone = await getUserPhone(response.user!.id);
+        
+        if (phone != null && phone.isNotEmpty) {
+          print('📲 Sending OTP to: $phone');
+          try {
+            await _client.auth.signInWithOtp(phone: phone);
+            return phone; // Return phone to indicate OTP flow needed
+          } catch (e) {
+            print('❌ Error sending OTP: $e');
+            return "Failed to send OTP. Please try again.";
+          }
+        } else {
+          print('⚠️ No phone number found in profiles table, proceeding to home');
+          // No phone number found, proceed directly to home
+          state = state.copyWith(isAuthenticated: true, user: response.user);
+          return null; // success - no OTP needed
+        }
       } else {
         return "Invalid login credentials.";
       }
@@ -65,29 +128,18 @@ class AuthController extends StateNotifier<AuthState> {
       return e.toString();
     }
   }
+
 /// Sign in with Google
 Future<String?> signInWithGoogle() async {
   try {
-    // This opens the browser for the OAuth flow
     final response = await _client.auth.signInWithOAuth(
       OAuthProvider.google,
-      redirectTo: 'io.testerapp://login-callback', // 👈 for mobile deep linking
+      redirectTo: 'tamubot://auth/callback',
     );
 
-      return null; // success, Supabase will handle session persistence
-  } on AuthException catch (e) {
-    return e.message;
-  } catch (e) {
-    return e.toString();
-  }
-}
-/// Sign in with phone number (sends OTP SMS)
-Future<String?> signInWithPhone(String phoneNumber) async {
-  try {
-    await _client.auth.signInWithOtp(
-      phone: phoneNumber,
-    );
-    return "OTP sent to $phoneNumber";
+    // CHANGE THIS LINE ONLY:
+    return null; 
+    
   } on AuthException catch (e) {
     return e.message;
   } catch (e) {
@@ -95,27 +147,101 @@ Future<String?> signInWithPhone(String phoneNumber) async {
   }
 }
 
-/// Verify OTP for phone sign-in
-Future<String?> verifyPhoneOtp(String phoneNumber, String otp) async {
-  try {
-    final response = await _client.auth.verifyOTP(
-      phone: phoneNumber,
-      token: otp,
-      type: OtpType.sms,
-    );
+  /// Verify OTP for phone sign-in
+  Future<String?> verifyPhoneOtp(String phoneNumber, String otp) async {
+    try {
+      final response = await _client.auth.verifyOTP(
+        phone: phoneNumber,
+        token: otp,
+        type: OtpType.sms,
+      );
 
-    if (response.user != null) {
-      state = state.copyWith(isAuthenticated: true, user: response.user);
-      return null; // success
-    } else {
-      return "Invalid OTP.";
+      if (response.user != null) {
+        state = state.copyWith(isAuthenticated: true, user: response.user);
+        return null; // success
+      } else {
+        return "Invalid OTP.";
+      }
+    } on AuthException catch (e) {
+      return e.message;
+    } catch (e) {
+      return e.toString();
     }
-  } on AuthException catch (e) {
-    return e.message;
-  } catch (e) {
-    return e.toString();
   }
-}
+
+  /// Send OTP to phone number
+  Future<String?> sendOtpToPhone(String phoneNumber) async {
+    try {
+      await _client.auth.signInWithOtp(phone: phoneNumber);
+      return "OTP sent to $phoneNumber";
+    } on AuthException catch (e) {
+      return e.message;
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  /// Update user phone number in profiles table
+  Future<String?> updateUserPhone(String phone) async {
+    try {
+      final user = _client.auth.currentUser;
+      if (user == null) return "No user logged in";
+      
+      await _client.from('profiles').upsert({
+        'id': user.id,
+        'phone': phone,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+      
+      print('✅ Phone updated in profiles: $phone');
+      return null; // success
+    } catch (e) {
+      print('❌ Error updating phone: $e');
+      return e.toString();
+    }
+  }
+
+  /// Get user profile data
+  Future<Map<String, dynamic>?> getUserProfile() async {
+    try {
+      final user = _client.auth.currentUser;
+      if (user == null) return null;
+
+      final response = await _client
+          .from('profiles')
+          .select()
+          .eq('id', user.id)
+          .single();
+
+      return response as Map<String, dynamic>;
+    } catch (e) {
+      print('❌ Error getting user profile: $e');
+      return null;
+    }
+  }
+
+  /// Debug method to check user data
+  void debugUserData() {
+    final user = _client.auth.currentUser;
+    print('=== USER DEBUG INFO ===');
+    print('User ID: ${user?.id}');
+    print('Email: ${user?.email}');
+    print('Metadata: ${user?.userMetadata}');
+    print('Confirmed: ${user?.emailConfirmedAt}');
+    
+    if (user != null) {
+      _client.from('profiles')
+          .select()
+          .eq('id', user.id)
+          .single()
+          .then((profile) {
+        print('📊 Profile data: $profile');
+      }).catchError((e) {
+        print('❌ Error fetching profile: $e');
+      });
+    }
+    print('=====================');
+  }
 
   /// Sign out the current user
   Future<void> signOut() async {
@@ -123,7 +249,7 @@ Future<String?> verifyPhoneOtp(String phoneNumber, String otp) async {
     state = AuthState(isAuthenticated: false);
   }
 
-  /// 🔑 Change password (when logged in)
+  /// Change password
   Future<String?> changePassword(String newPassword) async {
     try {
       final response = await _client.auth.updateUser(
@@ -141,21 +267,20 @@ Future<String?> verifyPhoneOtp(String phoneNumber, String otp) async {
     }
   }
 
-  /// 🔑 Forgot password (send reset email)
-  Future<String?> sendPasswordReset(String email) async {
-    try {
-      await _client.auth.resetPasswordForEmail(
-        email,
-        redirectTo: "io.testerapp://resetpassword", // 👈 must match deep link setup
-      );
-      return "Password reset email sent!";
-    } on AuthException catch (e) {
-      return e.message;
-    } catch (e) {
-      return e.toString();
-    }
+ /// Forgot password (send reset email)
+Future<String?> sendPasswordReset(String email) async {
+  try {
+    await _client.auth.resetPasswordForEmail(
+      email,
+      redirectTo: 'tamubot://auth/callback', // Change this
+    );
+    return "Password reset email sent! Check your email for the reset link.";
+  } on AuthException catch (e) {
+    return e.message;
+  } catch (e) {
+    return e.toString();
   }
-}
+}}
 
 /// Provider for the AuthController
 final authControllerProvider =
