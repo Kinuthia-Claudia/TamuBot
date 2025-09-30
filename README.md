@@ -1,2 +1,46 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/F63P1L7A)
-[![Open in Visual Studio Code](https://classroom.github.com/assets/open-in-vscode-2e0aaae1b6195c2367325f4f02e2d04e9abb55f0b24a779b69b11b9e10269abc.svg)](https://classroom.github.com/online_ide?assignment_repo_id=20100723&assignment_repo_type=AssignmentRepo)
+## TAMUBOT: SMART KITCHEN ASSISTANT
+
+---
+
+##  Features
+
+**Authentication**
+  - Email + password with confirmation  
+  - Google sign-in integration  
+  - Phone authentication with MessageBird provider  
+  - Two-Factor Authentication (2FA) via OTP  
+
+**Recipe Management**
+  - Browse curated Kenyan recipes  
+  - Voice-based search and cooking guidance 
+  - Bookmark and categorize recipes  
+
+---
+
+## Tech Stack
+
+- **Frontend**: Flutter  
+- **State Management**: Riverpod  
+- **Backend & Auth**: Supabase  
+- **2FA (OTP)**: MessageBird SMS API  
+- **Deep Links**: App Links  
+ 
+
+---
+
+##  Getting Started
+
+### 1. Clone the repository
+```bash
+git clone https:Kinuthia-Claudia/TamuBot.git
+cd tamubot
+### 2. Install dependencies
+```bash
+flutter pub get
+### 2. Configure environment variables by creating .env file in tamubot folder
+```bash
+touch .env
+
+
+
+
