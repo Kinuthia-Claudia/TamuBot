@@ -27,16 +27,11 @@ class HomeScreen extends ConsumerWidget {
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
       Text(
-        "Welcome, ${authState.user?.email ?? 'Guest'} 👋",
+        "Welcome ${authState.user?.email ?? ''} 👋",
         style: const TextStyle(fontSize: 20),
       ),
       const SizedBox(height: 20),
-      ElevatedButton(
-        onPressed: () {
-          Navigator.pushNamed(context, '/change-password');
-        },
-        child: const Text("Change Password"),
-      ),
+
     ],
   ),
 ),

@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app", 
+    "package_name": "com.example.tamubot",
+    "sha256_cert_fingerprints": [
+      "62:A3:23:93:3A:1C:0B:33:95:3A:7A:36:2A:FB:8E:87:7C:55:4B:51:87:6F:5C:6C:9A:0A:DE:7E:66:6F:7A:5C"
+    ]
+  }
+}]
