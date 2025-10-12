@@ -30,6 +30,7 @@ migrate_working_dir/
 .dart_tool/
 .flutter-plugins-dependencies
 .pub-cache/
+
 .pub/
 /build/
 /coverage/
@@ -39,7 +40,9 @@ app.*.symbols
 
 # Obfuscation related
 app.*.map.json
-
+# In your root .gitignore (if you have one)
+/api/node_modules/
+/api/.env
 # Android Studio will place build artifacts here
 /android/app/debug
 /android/app/profile

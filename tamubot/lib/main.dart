@@ -132,7 +132,7 @@ class _MyAppState extends State<MyApp> {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(primarySwatch: Colors.blue),
       navigatorKey: _navigatorKey, // Add this for global navigation
-      initialRoute: '/splash',
+      initialRoute: '/home',
       routes: {
         '/splash': (_) => const SplashScreen(),
         '/login': (_) => const LoginScreen(),
