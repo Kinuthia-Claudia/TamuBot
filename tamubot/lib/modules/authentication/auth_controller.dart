@@ -37,32 +37,41 @@ class AuthController extends StateNotifier<AuthState> {
       print('   Username: $username');
 
       // Step 1: Create the user account
-      final response = await _client.auth.signUp(
-        email: email,
-        password: password,
-        emailRedirectTo: 'tamubot://auth/callback',
-      );
+     final response = await _client.auth.signUp(
+ 
+  email: email,
+  password: password,
+  data: {
+    'phone': phone,
+  },
+  emailRedirectTo: 'tamubot://auth/callback',
+);
 
-      if (response.user != null) {
-        print('✅ User created: ${response.user!.id}');
-        
-        // Step 2: Create user profile in profiles table
-        await _client.from('profiles').upsert({
-          'id': response.user!.id,
-          'username': username,
-          'phone': phone,
-          'email': email,
-          'created_at': DateTime.now().toIso8601String(),
-          'updated_at': DateTime.now().toIso8601String(),
-        });
+// ✅ Fix: Handle cases where user is not immediately available
+final user = response.user;
 
-        print('✅ Profile created in database');
-        print('📱 Phone saved to profiles: $phone');
-        
-        return "Please check your email to confirm your account.";
-      } else {
-        return "Sign-up failed: No user returned.";
-      }
+if (user != null) {
+  print('✅ User created: ${user.id}');
+  
+  // Step 2: Create user profile in profiles table
+  await _client.from('profiles').upsert({
+    'id': user.id,
+    'username': username,
+    'phone': phone,
+    'email': email,
+    'created_at': DateTime.now().toIso8601String(),
+    'updated_at': DateTime.now().toIso8601String(),
+  });
+
+  print('✅ Profile created in database');
+  print('📱 Phone saved to profiles: $phone');
+
+  return "Please check your email to confirm your account.";
+} else {
+  print('⚠️ No user returned yet (email confirmation pending).');
+  return "Please check your email to confirm your account.";
+}
+
     } on AuthException catch (e) {
       print('❌ Auth error: ${e.message}');
       return e.message;
@@ -146,42 +155,28 @@ Future<String?> signInWithGoogle() async {
     return e.toString();
   }
 }
-
-  /// Verify OTP for phone sign-in
-  Future<String?> verifyPhoneOtp(String phoneNumber, String otp) async {
-    try {
-      final response = await _client.auth.verifyOTP(
-        phone: phoneNumber,
-        token: otp,
-        type: OtpType.sms,
-      );
-
-      if (response.user != null) {
-        state = state.copyWith(isAuthenticated: true, user: response.user);
-        return null; // success
-      } else {
-        return "Invalid OTP.";
-      }
-    } on AuthException catch (e) {
-      return e.message;
-    } catch (e) {
-      return e.toString();
-    }
+Future<String?> sendOtpToPhone(String phone) async {
+  try {
+    await _client.auth.signInWithOtp(phone: phone);
+    return "OTP sent successfully";
+  } catch (e) {
+    return e.toString();
   }
+}
 
-  /// Send OTP to phone number
-  Future<String?> sendOtpToPhone(String phoneNumber) async {
-    try {
-      await _client.auth.signInWithOtp(phone: phoneNumber);
-      return "OTP sent to $phoneNumber";
-    } on AuthException catch (e) {
-      return e.message;
-    } catch (e) {
-      return e.toString();
-    }
+Future<String?> verifyPhoneOtp(String phone, String token) async {
+  try {
+    await _client.auth.verifyOTP(
+      phone: phone,
+      token: token,
+      type: OtpType.sms,
+    );
+    return null; // success
+  } catch (e) {
+    return e.toString();
   }
-
-  /// Update user phone number in profiles table
+}
+/// Update user phone number in profiles table
   Future<String?> updateUserPhone(String phone) async {
     try {
       final user = _client.auth.currentUser;

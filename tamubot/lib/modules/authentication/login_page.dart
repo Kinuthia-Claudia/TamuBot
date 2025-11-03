@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tamubot/modules/authentication/forgotpass_page.dart';
 import 'auth_controller.dart';
 
@@ -42,6 +43,62 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _obscurePassword = !_obscurePassword;
     });
   }
+
+  // Add this method for OTP phone input dialog
+  Future<String?> _showPhoneInputDialog(BuildContext context) async {
+    String phone = '';
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Enter Phone Number'),
+          content: TextField(
+            onChanged: (value) => phone = value,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(
+              hintText: '+1234567890',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, phone),
+              child: const Text('Send OTP'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+Future<String?> _showEmailInputDialog(BuildContext context) async {
+  final controller = TextEditingController();
+  return showDialog<String>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text("Enter your email"),
+      content: TextField(
+        controller: controller,
+        keyboardType: TextInputType.emailAddress,
+        decoration: const InputDecoration(
+          labelText: "Email",
+          hintText: "you@example.com",
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, controller.text.trim()),
+          child: const Text("Send Link"),
+        ),
+      ],
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -277,34 +334,77 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Google Sign In Button
-                  SizedBox(
-                    width: 60,
-                    height: 60,
-                    child: FloatingActionButton(
-                      onPressed: () async {
-                        setState(() => _isLoading = true);
-                        final message = await ref.read(authControllerProvider.notifier).signInWithGoogle();
-                        setState(() => _isLoading = false);
-                        
-                        if (message == "SUCCESS" && mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Google sign-in successful")),
-                          );
-                        } else if (message != null && mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(message)),
-                          );
-                        }
-                      },
-                      backgroundColor: Colors.white,
-                      elevation: 1,
-                      child: Image.asset(
-                        'assets/google.png',
-                        width: 24,
-                        height: 24,
+                  // Social + OTP Login Row
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Google Sign-In
+                      SizedBox(
+                        width: 60,
+                        height: 60,
+                        child: FloatingActionButton(
+                          onPressed: () async {
+                            setState(() => _isLoading = true);
+                            final message = await ref.read(authControllerProvider.notifier).signInWithGoogle();
+                            setState(() => _isLoading = false);
+
+                            if (message == "SUCCESS" && mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Google sign-in successful")),
+                              );
+                              Navigator.pushReplacementNamed(context, '/home');
+                            } else if (message != null && mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(message)),
+                              );
+                            }
+                          },
+                          backgroundColor: Colors.white,
+                          elevation: 1,
+                          child: Image.asset(
+                            'assets/google.png',
+                            width: 24,
+                            height: 24,
+                          ),
+                        ),
                       ),
-                    ),
+
+                      const SizedBox(width: 30),
+
+                      // Login with OTP Option
+// Inside your login screen’s Row
+SizedBox(
+  width: 60,
+  height: 60,
+  child: FloatingActionButton(
+    onPressed: () async {
+      // Ask user for their email
+      final email = await _showEmailInputDialog(context);
+      if (email == null || email.isEmpty) return;
+
+      try {
+        await Supabase.instance.client.auth.signInWithOtp(
+  email: email,
+  emailRedirectTo: 'com.example.tamubot://login-callback',
+);
+
+  
+        if (mounted) {
+          Navigator.pushNamed(context, '/magic-link-wait', arguments: {'email': email});
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to send magic link: $e")),
+        );
+      }
+    },
+    backgroundColor: Colors.white,
+    elevation: 1,
+    child: const Icon(Icons.email_outlined, color: Colors.blue, size: 28),
+  ),
+),
+
+                    ],
                   ),
                   const SizedBox(height: 32),
 
@@ -314,7 +414,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          "Don't have an account? ",
+                          "Don't have account? ",
                           style: TextStyle(
                             color: Colors.grey[600],
                           ),
