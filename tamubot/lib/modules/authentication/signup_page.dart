@@ -48,16 +48,16 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   Text(
                     "Create Account",
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     "Join us and start your journey",
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
                   ),
                 ],
               ),
@@ -101,10 +101,22 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           child: DropdownButton<String>(
                             value: _selectedCountryCode,
                             items: const [
-                              DropdownMenuItem(value: '+1', child: Text('+1 US')),
-                              DropdownMenuItem(value: '+44', child: Text('+44 UK')),
-                              DropdownMenuItem(value: '+91', child: Text('+91 IN')),
-                              DropdownMenuItem(value: '+254', child: Text('+254 KE')),
+                              DropdownMenuItem(
+                                value: '+1',
+                                child: Text('+1 US'),
+                              ),
+                              DropdownMenuItem(
+                                value: '+44',
+                                child: Text('+44 UK'),
+                              ),
+                              DropdownMenuItem(
+                                value: '+91',
+                                child: Text('+91 IN'),
+                              ),
+                              DropdownMenuItem(
+                                value: '+254',
+                                child: Text('+254 KE'),
+                              ),
                             ],
                             onChanged: (value) {
                               setState(() {
@@ -189,7 +201,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.error_outline, color: Colors.red[400], size: 16),
+                          Icon(
+                            Icons.error_outline,
+                            color: Colors.red[400],
+                            size: 16,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -221,7 +237,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                 _error = null;
                               });
 
-                              final formattedPhone = _formatPhoneNumber(_phoneController.text);
+                              final formattedPhone = _formatPhoneNumber(
+                                _phoneController.text,
+                              );
                               print('Formatted phone: $formattedPhone');
 
                               final error = await ref
@@ -238,12 +256,20 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                               if (error != null) {
                                 setState(() => _error = error);
                               } else {
-                                if (mounted) {
+                                /*if (mounted) {
                                   Navigator.pushReplacementNamed(
                                     context,
                                     '/email-confirmation-handler',
                                   );
-                                }
+                                }*/
+                                // No manual navigation — Riverpod will handle redirection
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      "Please check your email for confirmation.",
+                                    ),
+                                  ),
+                                );
                               }
                             },
                             style: ElevatedButton.styleFrom(
@@ -268,9 +294,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   // Divider
                   Row(
                     children: [
-                      Expanded(
-                        child: Divider(color: Colors.grey[300]),
-                      ),
+                      Expanded(child: Divider(color: Colors.grey[300])),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
@@ -281,9 +305,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                           ),
                         ),
                       ),
-                      Expanded(
-                        child: Divider(color: Colors.grey[300]),
-                      ),
+                      Expanded(child: Divider(color: Colors.grey[300])),
                     ],
                   ),
                   const SizedBox(height: 24),
@@ -296,17 +318,21 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       child: FloatingActionButton(
                         onPressed: () async {
                           setState(() => _isLoading = true);
-                          final message = await ref.read(authControllerProvider.notifier).signInWithGoogle();
+                          final message = await ref
+                              .read(authControllerProvider.notifier)
+                              .signInWithGoogle();
                           setState(() => _isLoading = false);
-                          
+
                           if (message == "SUCCESS" && mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Google sign-in successful")),
+                              const SnackBar(
+                                content: Text("Google sign-in successful"),
+                              ),
                             );
                           } else if (message != null && mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(message)),
-                            );
+                            ScaffoldMessenger.of(
+                              context,
+                            ).showSnackBar(SnackBar(content: Text(message)));
                           }
                         },
                         backgroundColor: Colors.white,
@@ -328,9 +354,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       children: [
                         Text(
                           "Already have an account? ",
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                          ),
+                          style: TextStyle(color: Colors.grey[600]),
                         ),
                         GestureDetector(
                           onTap: () {
