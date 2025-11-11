@@ -5,18 +5,15 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Improved CORS for Flutter development
-app.use(cors({
-  origin: ['http://localhost', 'http://10.0.2.2:3000', 'http://127.0.0.1:3000', 'http://192.168.100.4:3000'],
-  credentials: true
-}));
-
+// Middleware
+app.use(cors());
 app.use(express.json());
 
-// Your existing routes...
+// Test route - this is what your Flutter app will call
 app.post('/api/voice-command', (req, res) => {
   console.log('Received voice command:', req.body);
   
+  // For now, just return a dummy response
   res.json({
     success: true,
     message: 'API is working!',
@@ -30,8 +27,14 @@ app.post('/api/voice-command', (req, res) => {
   });
 });
 
+// Health check route
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Cooking Assistant API is running!' });
+});
+
+// Root route
+app.get('/', (req, res) => {
+  res.json({ message: 'Cooking Assistant API Server' });
 });
 
 app.listen(PORT, () => {

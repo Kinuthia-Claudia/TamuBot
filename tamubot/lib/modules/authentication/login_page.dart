@@ -273,9 +273,9 @@ Future<String?> _showEmailInputDialog(BuildContext context) async {
                                 if (_rememberMe) {
                                   await _saveRememberMeFlag(true);
                                 }
-                                /*if (mounted) {
+                                if (mounted) {
                                   Navigator.pushReplacementNamed(context, '/home');
-                                }*/
+                                }
                               } else if (result is String && result.length > 10) {
                                 // OTP needed, navigate to verification
                                 if (_rememberMe) {

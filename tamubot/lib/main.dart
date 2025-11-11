@@ -12,15 +12,12 @@ import 'package:tamubot/modules/authentication/forgotpass_page.dart';
 import 'package:tamubot/modules/authentication/login_page.dart';
 import 'package:tamubot/modules/authentication/signup_page.dart';
 import 'package:tamubot/modules/authentication/splashscreen.dart';
-import 'package:tamubot/modules/authentication/otpverification_page.dart';
 import 'package:tamubot/modules/home/home_page.dart';
-import 'package:tamubot/modules/profile/profile_page.dart';
-import 'package:tamubot/modules/settings/settings_page.dart';
+import 'package:tamubot/modules/authentication/otpverification_page.dart'; // 👈 add this
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ Load environment variables and initialize Supabase
   await dotenv.load(fileName: '.env');
   await SupabaseConfig.init();
 
@@ -45,14 +42,13 @@ class _MyAppState extends State<MyApp> {
     _listenForDeepLinks();
   }
 
-  /// ✅ Listen for Supabase authentication state changes
+  /// ✅ Listen for Supabase auth changes
   void _setupAuthListener() {
     final client = Supabase.instance.client;
 
     client.auth.onAuthStateChange.listen((data) {
       final event = data.event;
       final session = data.session;
-
       debugPrint('🔐 Auth state changed: $event');
 
       if (event == AuthChangeEvent.passwordRecovery) {
@@ -65,7 +61,7 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  /// ✅ Listen for magic link or OAuth redirect deep links (via app_links)
+  /// ✅ Listen for magic link deep links (app_links plugin)
   void _listenForDeepLinks() {
     final appLinks = AppLinks();
 
@@ -76,7 +72,7 @@ class _MyAppState extends State<MyApp> {
       try {
         final client = Supabase.instance.client;
 
-        // ✅ Recover Supabase session from the deep link
+        // ✅ Recover Supabase session from the link
         await client.auth.getSessionFromUrl(uri);
 
         if (!mounted) return;
@@ -89,7 +85,6 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  /// ✅ Navigation helpers
   void _navigateToChangePassword() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _navigatorKey.currentState?.pushReplacementNamed('/change-password');
@@ -119,34 +114,17 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'Kenyan Cooking Assistant',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.brown,
-        scaffoldBackgroundColor: const Color(0xFFF9F4F1),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.brown,
-          foregroundColor: Colors.white,
-          elevation: 2,
-        ),
-        inputDecorationTheme: const InputDecorationTheme(
-          border: OutlineInputBorder(),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.brown, width: 2),
-          ),
-        ),
-      ),
+      theme: ThemeData(primarySwatch: Colors.brown),
       navigatorKey: _navigatorKey,
-      initialRoute: '/splash',
+      initialRoute: '/home',
       routes: {
         '/splash': (_) => const SplashScreen(),
         '/login': (_) => const LoginScreen(),
         '/signup': (_) => const SignupScreen(),
         '/home': (_) => const HomePage(),
-       '/change-password': (_) => const ChangePasswordScreen(),
-        '/forgot-password': (_) => const ForgotPasswordPage(), 
+        '/change-password': (_) => const ChangePasswordScreen(),
+        '/forgot-password': (_) => const ForgotPasswordPage(),
         '/magic-link-wait': (_) => const MagicLinkWaitScreen(),
-        '/profile': (_) => const ProfilePage(),
-        '/settings': (_) => const SettingsPage(),
-
       },
     );
   }

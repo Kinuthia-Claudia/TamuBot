@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tamubot/widgets/bottom_nav.dart';
-import 'package:tamubot/widgets/voice_assistant_widget.dart';
+
+// Local imports
 import 'package:tamubot/modules/profile/profile_page.dart';
 import 'package:tamubot/modules/recipes/recipes_page.dart';
 import 'package:tamubot/modules/settings/settings_page.dart';
+import 'package:tamubot/widgets/bottom_nav.dart';
+import 'package:tamubot/widgets/voice_assistant_widget.dart';
 import '../../providers/navigation_provider.dart';
 
 class HomePage extends ConsumerWidget {
@@ -14,8 +16,9 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(navigationIndexProvider);
 
+    // Define the pages for each tab
     final pages = [
-      const HomeContent(),
+      const HomeContent(), // This is the Home tab
       const ProfilePage(),
       const MyRecipesPage(),
       const SettingsPage(),
@@ -33,11 +36,20 @@ class HomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Center(
-          child: VoiceAssistantWidget(),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Text(
+              'Welcome to TamuBot tst 2!',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 30),
+            // Voice assistant widget integrated into Home tab
+            VoiceAssistantWidget(),
+          ],
         ),
       ),
     );
