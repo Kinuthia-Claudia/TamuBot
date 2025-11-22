@@ -37,32 +37,13 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   StreamSubscription<Uri>? _sub;
+  bool _isSplashScreenActive = true;
 
   @override
   void initState() {
     super.initState();
-    _setupAuthListener();
     _listenForDeepLinks();
-  }
-
-  /// ✅ Listen for Supabase authentication state changes
-  void _setupAuthListener() {
-    final client = Supabase.instance.client;
-
-    client.auth.onAuthStateChange.listen((data) {
-      final event = data.event;
-      final session = data.session;
-
-      debugPrint('🔐 Auth state changed: $event');
-
-      if (event == AuthChangeEvent.passwordRecovery) {
-        _navigateToChangePassword();
-      } else if (event == AuthChangeEvent.signedIn && session != null) {
-        _navigateToHome();
-      } else if (event == AuthChangeEvent.signedOut) {
-        _navigateToLogin();
-      }
-    });
+    // Don't setup auth listener immediately - let splash screen handle it
   }
 
   /// ✅ Listen for magic link or OAuth redirect deep links (via app_links)
@@ -87,6 +68,48 @@ class _MyAppState extends State<MyApp> {
     }, onError: (err) {
       debugPrint('❌ Deep link stream error: $err');
     });
+  }
+
+  /// ✅ Setup auth listener after splash screen
+  void _setupAuthListener() {
+    final client = Supabase.instance.client;
+
+    client.auth.onAuthStateChange.listen((data) {
+      final event = data.event;
+      final session = data.session;
+
+      debugPrint('🔐 Auth state changed: $event');
+
+      // Only handle auth changes if splash screen is done
+      if (!_isSplashScreenActive) {
+        if (event == AuthChangeEvent.passwordRecovery) {
+          _navigateToChangePassword();
+        } else if (event == AuthChangeEvent.signedIn && session != null) {
+          _navigateToHome();
+        } else if (event == AuthChangeEvent.signedOut) {
+          _navigateToLogin();
+        }
+      }
+    });
+  }
+
+  /// ✅ Called by splash screen when it's done
+  void _onSplashComplete() {
+    _isSplashScreenActive = false;
+    _setupAuthListener(); // Now setup auth listener
+    _checkInitialAuth();
+  }
+
+  /// ✅ Check initial auth state after splash
+  void _checkInitialAuth() {
+    final client = Supabase.instance.client;
+    final session = client.auth.currentSession;
+
+    if (session != null) {
+      _navigateToHome();
+    } else {
+      _navigateToLogin();
+    }
   }
 
   /// ✅ Navigation helpers
@@ -137,16 +160,17 @@ class _MyAppState extends State<MyApp> {
       navigatorKey: _navigatorKey,
       initialRoute: '/splash',
       routes: {
-        '/splash': (_) => const SplashScreen(),
+        '/splash': (_) => SplashScreen(
+              onSplashComplete: _onSplashComplete,
+            ),
         '/login': (_) => const LoginScreen(),
         '/signup': (_) => const SignupScreen(),
         '/home': (_) => const HomePage(),
-       '/change-password': (_) => const ChangePasswordScreen(),
+        '/change-password': (_) => const ChangePasswordScreen(),
         '/forgot-password': (_) => const ForgotPasswordPage(), 
         '/magic-link-wait': (_) => const MagicLinkWaitScreen(),
         '/profile': (_) => const ProfilePage(),
         '/settings': (_) => const SettingsPage(),
-
       },
     );
   }
