@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:tamubot_admin/dashboard.dart';
+import 'package:tamubot_admin/admindashboard.dart';
 import 'package:tamubot_admin/login_page.dart';
 
 class AuthWrapper extends StatefulWidget {

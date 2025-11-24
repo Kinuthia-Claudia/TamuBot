@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:rive/rive.dart';
 
 class AdminLoginPage extends StatefulWidget {
   const AdminLoginPage({super.key});
@@ -25,7 +26,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Logo and Header
+              // Robot Animation and Header
               _buildHeader(),
               const SizedBox(height: 48),
               
@@ -41,10 +42,10 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
   Widget _buildHeader() {
     return Column(
       children: [
-        // Tamubot Logo
+        // Robot Animation Container
         Container(
-          width: 120,
-          height: 120,
+          width: 140,
+          height: 140,
           decoration: BoxDecoration(
             color: const Color(0xFF10B981).withOpacity(0.1),
             shape: BoxShape.circle,
@@ -52,11 +53,19 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
               color: const Color(0xFF10B981).withOpacity(0.2),
               width: 2,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF10B981).withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-          child: const Icon(
-            Icons.smart_toy,
-            size: 50,
-            color: Color(0xFF10B981),
+          child: ClipOval(
+            child: RiveAnimation.asset(
+              'assets/robot.riv',
+              fit: BoxFit.cover,
+            ),
           ),
         ),
         const SizedBox(height: 24),
@@ -201,7 +210,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
           ),
         ),
       ),
-      onSubmitted: (_) => login(),
+      onSubmitted: (_) => _login(),
     );
   }
 
@@ -210,7 +219,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
       width: double.infinity,
       height: 56,
       child: ElevatedButton(
-        onPressed: isLoading ? null : login,
+        onPressed: isLoading ? null : _login,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF10B981),
           foregroundColor: Colors.white,
@@ -270,7 +279,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
     );
   }
 
-  Future<void> login() async {
+  Future<void> _login() async {
     setState(() {
       isLoading = true;
       error = null;
@@ -287,7 +296,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
         return;
       }
 
-      // Success - no need to redirect, AuthWrapper will handle it
+      // Success - AuthWrapper will handle navigation
 
     } on AuthException catch (e) {
       setState(() => error = "Authentication error: ${e.message}");

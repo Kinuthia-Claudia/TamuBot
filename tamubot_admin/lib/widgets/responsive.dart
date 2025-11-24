@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tamubot_admin/dashboard.dart';
+import 'package:tamubot_admin/admindashboard.dart';
 
 class ResponsiveDashboard extends StatelessWidget {
   const ResponsiveDashboard({super.key});
