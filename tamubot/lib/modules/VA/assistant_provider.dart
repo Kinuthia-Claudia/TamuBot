@@ -1,19 +1,60 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'assistant_service.dart';
 import 'assistant_model.dart';
+import 'tts_service.dart';
+import 'audio_recorder_service.dart';
 
-// Service provider
+// Service providers
 final assistantServiceProvider = Provider<AssistantService>((ref) {
   return AssistantService();
 });
 
+final audioRecorderProvider = Provider<AudioRecorderService>((ref) {
+  return AudioRecorderService();
+});
+
+final ttsServiceProvider = Provider<TtsService>((ref) {
+  return TtsService();
+});
+
+// TTS Settings
+final ttsSettingsProvider = StateNotifierProvider<TtsSettingsNotifier, TtsSettings>((ref) {
+  return TtsSettingsNotifier();
+});
+
+class TtsSettingsNotifier extends StateNotifier<TtsSettings> {
+  TtsSettingsNotifier() : super(TtsSettings());
+
+  void setSpeechRate(double rate) {
+    state = state.copyWith(speechRate: rate);
+  }
+
+  void setPitch(double pitch) {
+    state = state.copyWith(pitch: pitch);
+  }
+
+  void setVolume(double volume) {
+    state = state.copyWith(volume: volume);
+  }
+
+  void toggleEnabled() {
+    state = state.copyWith(enabled: !state.enabled);
+  }
+}
+
 // Main assistant provider
 class AssistantNotifier extends StateNotifier<AssistantState> {
+  final Ref _ref;
   final AssistantService service;
+  final AudioRecorderService audioRecorder;
+  final TtsService ttsService;
   String _currentSessionId = '';
   
-  AssistantNotifier(this.service) : super(const AssistantState());
+  AssistantNotifier(this._ref, this.service, this.audioRecorder, this.ttsService)
+      : super(const AssistantState());
 
   // Generate session ID only once per conversation
   String get _sessionId {
@@ -21,6 +62,124 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
       _currentSessionId = 'flutter_${DateTime.now().millisecondsSinceEpoch}';
     }
     return _currentSessionId;
+  }
+
+  // Voice recording methods
+  Future<void> startRecording() async {
+    try {
+      await audioRecorder.startRecording();
+      state = state.copyWith(
+        isRecording: true,
+        error: null,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        error: 'Failed to start recording: $e',
+      );
+    }
+  }
+
+  Future<String?> stopRecording() async {
+    try {
+      final path = await audioRecorder.stopRecording();
+      state = state.copyWith(
+        isRecording: false,
+        recordingPath: path,
+      );
+      return path;
+    } catch (e) {
+      state = state.copyWith(
+        isRecording: false,
+        error: 'Failed to stop recording: $e',
+      );
+      return null;
+    }
+  }
+// Process audio input
+Future<void> processAudioInput(File audioFile) async {
+  final user = Supabase.instance.client.auth.currentUser;
+  if (user == null) {
+    state = state.copyWith(error: 'User not logged in');
+    return;
+  }
+
+  state = state.copyWith(
+    isLoading: true,
+    error: null,
+  );
+
+  try {
+    print('1. Starting audio upload to Supabase...');
+    
+    // 1. Upload to Supabase
+    final audioUrl = await service.uploadAudioToSupabase(
+      audioFile: audioFile,
+      userId: user.id,
+    );
+
+    print('2. Audio uploaded successfully. URL: $audioUrl');
+    print('3. Sending transcription request...');
+
+    // 2. Send for transcription
+    final transcription = await service.transcribeAudio(
+      audioUrl: audioUrl,
+      userId: user.id,
+    );
+
+    print('4. Transcription response: $transcription');
+
+    if (transcription['success'] == true) {
+      final transcribedText = transcription['text'];
+      print('5. Transcribed text: $transcribedText');
+      
+      // 3. Use transcribed text as message
+      if (transcribedText.isNotEmpty) {
+        await sendMessage(transcribedText);
+      } else {
+        throw Exception('No text transcribed from audio');
+      }
+    } else {
+      throw Exception(transcription['error'] ?? 'Transcription failed');
+    }
+  } catch (e) {
+    print('Audio processing error: $e');
+    state = state.copyWith(
+      isLoading: false,
+      error: 'Audio processing failed: $e',
+    );
+  }
+}  // TTS Methods
+  Future<void> speakMessage(AssistantMessage message) async {
+    final ttsSettings = _ref.read(ttsSettingsProvider);
+    
+    if (!ttsSettings.enabled) return;
+
+    String textToSpeak = message.content;
+    if (message.ingredients != null) {
+      textToSpeak += " Ingredients: ${message.ingredients!.join(', ')}";
+    }
+    if (message.instructions != null) {
+      textToSpeak += " Instructions: ${message.instructions!.join('. ')}";
+    }
+
+    await ttsService.speak(
+      textToSpeak,
+      rate: ttsSettings.speechRate,
+      pitch: ttsSettings.pitch,
+      volume: ttsSettings.volume,
+    );
+  }
+
+  Future<void> toggleSpeech(AssistantMessage message) async {
+    if (ttsService.isPlaying) {
+      await ttsService.stop();
+    } else {
+      await speakMessage(message);
+    }
+  }
+
+  Future<void> stopSpeech() async {
+    await ttsService.stop();
   }
 
   // Send message and identify dish
@@ -84,6 +243,9 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
           recipeSession: session,
         );
 
+        // Auto-speak the response if TTS is enabled
+        await speakMessage(assistantMessage);
+
       } else {
         throw Exception(response['error'] ?? 'Failed to identify dish');
       }
@@ -141,6 +303,9 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
           isLoading: false,
           recipeSession: updatedSession,
         );
+
+        // Auto-speak the instructions if TTS is enabled
+        await speakMessage(instructionsMessage);
 
       } else {
         throw Exception(response['error'] ?? 'Failed to generate instructions');
@@ -204,6 +369,9 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
           recipeSession: updatedSession,
         );
 
+        // Auto-speak the substitution message if TTS is enabled
+        await speakMessage(substitutionMessage);
+
       } else {
         throw Exception(response['error'] ?? 'Failed to substitute ingredient');
       }
@@ -224,6 +392,7 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
   // Clear conversation - also reset session ID
   void clearConversation() {
     _currentSessionId = '';
+    ttsService.stop();
     state = const AssistantState();
   }
 
@@ -239,5 +408,7 @@ class AssistantNotifier extends StateNotifier<AssistantState> {
 
 final assistantProvider = StateNotifierProvider<AssistantNotifier, AssistantState>((ref) {
   final service = ref.watch(assistantServiceProvider);
-  return AssistantNotifier(service);
+  final audioRecorder = ref.watch(audioRecorderProvider);
+  final ttsService = ref.watch(ttsServiceProvider);
+  return AssistantNotifier(ref, service, audioRecorder, ttsService);
 });

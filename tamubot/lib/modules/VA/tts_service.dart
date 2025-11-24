@@ -1,31 +1,26 @@
-// lib/modules/assistant/tts_service.dart
-
 import 'package:flutter_tts/flutter_tts.dart';
 
-enum TtsState { playing, stopped }
-
 class TtsService {
-  FlutterTts flutterTts = FlutterTts();
-  TtsState _ttsState = TtsState.stopped;
+  final FlutterTts _flutterTts = FlutterTts();
+  bool _isPlaying = false;
 
-  TtsState get ttsState => _ttsState;
-  bool get isPlaying => _ttsState == TtsState.playing;
+  bool get isPlaying => _isPlaying;
 
   TtsService() {
-    _initTts();
+    _initializeTts();
   }
 
-  void _initTts() {
-    flutterTts.setStartHandler(() {
-      _ttsState = TtsState.playing;
+  void _initializeTts() {
+    _flutterTts.setStartHandler(() {
+      _isPlaying = true;
     });
 
-    flutterTts.setCompletionHandler(() {
-      _ttsState = TtsState.stopped;
+    _flutterTts.setCompletionHandler(() {
+      _isPlaying = false;
     });
 
-    flutterTts.setErrorHandler((msg) {
-      _ttsState = TtsState.stopped;
+    _flutterTts.setErrorHandler((message) {
+      _isPlaying = false;
     });
   }
 
@@ -36,43 +31,29 @@ class TtsService {
     double volume = 1.0,
     String language = 'en-US',
   }) async {
-    if (text.isNotEmpty) {
-      await flutterTts.setLanguage(language);
-      await flutterTts.setSpeechRate(rate);
-      await flutterTts.setPitch(pitch);
-      await flutterTts.setVolume(volume);
-      await flutterTts.speak(text);
-    }
+    await _flutterTts.setLanguage(language);
+    await _flutterTts.setSpeechRate(rate);
+    await _flutterTts.setPitch(pitch);
+    await _flutterTts.setVolume(volume);
+    
+    await _flutterTts.speak(text);
+    _isPlaying = true;
   }
 
   Future<void> stop() async {
-    await flutterTts.stop();
-    _ttsState = TtsState.stopped;
+    await _flutterTts.stop();
+    _isPlaying = false;
   }
 
-  // Simple play/stop toggle
-  Future<void> togglePlayStop(String text, {
-    double rate = 0.5,
-    double pitch = 1.0,
-    double volume = 1.0,
-    String language = 'en-US',
-  }) async {
-    if (isPlaying) {
+  Future<void> togglePlayStop(String text) async {
+    if (_isPlaying) {
       await stop();
     } else {
-      await speak(text, rate: rate, pitch: pitch, volume: volume, language: language);
+      await speak(text);
     }
   }
 
-  Future<List<dynamic>> getLanguages() async {
-    return await flutterTts.getLanguages;
-  }
-
-  Future<List<dynamic>> getVoices() async {
-    return await flutterTts.getVoices;
-  }
-
   void dispose() {
-    flutterTts.stop();
+    _flutterTts.stop();
   }
 }

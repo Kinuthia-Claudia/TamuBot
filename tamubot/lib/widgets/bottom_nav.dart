@@ -19,7 +19,7 @@ class BottomNavBar extends ConsumerWidget {
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
         BottomNavigationBarItem(icon: Icon(Icons.person), label: 'My Profile'),
-        BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'My Recipes'),
+        BottomNavigationBarItem(icon: Icon(Icons.menu_book), label: 'My Kitchen'),
         BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
       ],
     );

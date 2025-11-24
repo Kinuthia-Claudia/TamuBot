@@ -1,7 +1,13 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:audio_waveforms/audio_waveforms.dart';
 import 'package:tamubot/modules/VA/assistant_model.dart';
-import 'assistant_provider.dart';
+import 'package:tamubot/modules/VA/assistant_provider.dart';
+import 'package:tamubot/modules/VA/tts_service.dart';
+import 'package:tamubot/modules/recipes/recipe_service.dart';
+import 'package:tamubot/modules/recipes/save-recipes_dialog.dart';
 
 class AssistantPage extends ConsumerStatefulWidget {
   const AssistantPage({super.key});
@@ -13,11 +19,26 @@ class AssistantPage extends ConsumerStatefulWidget {
 class _AssistantPageState extends ConsumerState<AssistantPage> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
+  late RecorderController recorderController;
+  bool _hasShownSaveDialog = false;
+  Timer? _saveDialogTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    recorderController = RecorderController()
+      ..androidEncoder = AndroidEncoder.aac
+      ..androidOutputFormat = AndroidOutputFormat.mpeg4
+      ..iosEncoder = IosEncoder.kAudioFormatMPEG4AAC
+      ..sampleRate = 44100;
+  }
 
   @override
   void dispose() {
     _textController.dispose();
     _scrollController.dispose();
+    recorderController.dispose();
+    _saveDialogTimer?.cancel();
     super.dispose();
   }
 
@@ -27,11 +48,15 @@ class _AssistantPageState extends ConsumerState<AssistantPage> {
       ref.read(assistantProvider.notifier).sendMessage(message);
       _textController.clear();
       FocusScope.of(context).unfocus();
+      _resetSaveDialogFlag();
     }
   }
 
   void _getInstructions() {
-    ref.read(assistantProvider.notifier).getCookingInstructions();
+    ref.read(assistantProvider.notifier).getCookingInstructions().then((_) {
+      // Start timer for auto-save dialog after instructions are ready
+      _startSaveDialogTimer();
+    });
   }
 
   void _substituteIngredient(String ingredient) {
@@ -42,14 +67,129 @@ class _AssistantPageState extends ConsumerState<AssistantPage> {
     ref.read(assistantProvider.notifier).debugSession();
   }
 
+  // Voice recording methods
+  Future<void> _startRecording() async {
+    await ref.read(assistantProvider.notifier).startRecording();
+  }
+
+  Future<void> _stopRecording() async {
+    final path = await ref.read(assistantProvider.notifier).stopRecording();
+    if (path != null && mounted) {
+      _sendAudioRecording(path);
+    }
+  }
+
+  void _sendAudioRecording(String recordingPath) {
+    final audioFile = File(recordingPath);
+    ref.read(assistantProvider.notifier).processAudioInput(audioFile);
+    _resetSaveDialogFlag();
+  }
+
+  // TTS methods
+  void _toggleTts() {
+    ref.read(ttsSettingsProvider.notifier).toggleEnabled();
+  }
+
+  void _stopSpeech() {
+    ref.read(assistantProvider.notifier).stopSpeech();
+  }
+
+  void _toggleSpeech(AssistantMessage message) {
+    ref.read(assistantProvider.notifier).toggleSpeech(message);
+  }
+
+  // Recipe saving methods
+  void _showSaveRecipeDialog(RecipeData recipeData) {
+    _hasShownSaveDialog = true;
+    showDialog(
+      context: context,
+      builder: (context) => SaveRecipeDialog(recipeData: recipeData),
+    ).then((saved) {
+      if (saved == true) {
+        // Recipe was saved, show confirmation
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${recipeData.dish} saved to your recipes!'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    });
+  }
+
+  RecipeData _createRecipeDataFromSession() {
+    final state = ref.read(assistantProvider);
+    final session = state.recipeSession;
+    
+    if (session == null) {
+      throw Exception('No active recipe session');
+    }
+
+    return RecipeData(
+      dish: session.dishName ?? 'Unknown Recipe',
+      ingredients: session.ingredients ?? [],
+      instructions: session.instructions ?? [],
+      nutrition: {
+        'calories_per_serving': session.nutrition?.caloriesPerServing,
+        'servings': session.nutrition?.servings,
+        'total_calories': session.nutrition?.totalCalories,
+        'reasoning': session.nutrition?.reasoning,
+      },
+      substitutions: session.substitutions.map((sub) => '${sub.original} → ${sub.substitute}').toList(),
+    );
+  }
+
+  void _startSaveDialogTimer() {
+    // Cancel any existing timer
+    _saveDialogTimer?.cancel();
+    
+    // Start new timer - show dialog after 3 seconds
+    _saveDialogTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted && _canSaveRecipe(ref.read(assistantProvider)) && !_hasShownSaveDialog) {
+        try {
+          final recipeData = _createRecipeDataFromSession();
+          _showSaveRecipeDialog(recipeData);
+        } catch (e) {
+          print('Error creating recipe data: $e');
+        }
+      }
+    });
+  }
+
+  void _resetSaveDialogFlag() {
+    _hasShownSaveDialog = false;
+    _saveDialogTimer?.cancel();
+  }
+
+  bool _canSaveRecipe(AssistantState state) {
+    final session = state.recipeSession;
+    return session != null && 
+           session.dishName != null &&
+           session.ingredients != null &&
+           session.ingredients!.isNotEmpty && 
+           session.instructions != null &&
+           session.instructions!.isNotEmpty;
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(assistantProvider);
+    final ttsSettings = ref.watch(ttsSettingsProvider);
+    final ttsService = ref.watch(ttsServiceProvider);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Recipe Assistant'),
         actions: [
+          IconButton(
+            icon: Icon(
+              ttsSettings.enabled ? Icons.volume_up : Icons.volume_off,
+              color: ttsSettings.enabled ? Colors.blue : Colors.grey,
+            ),
+            onPressed: _toggleTts,
+            tooltip: 'Toggle TTS',
+          ),
           IconButton(
             icon: const Icon(Icons.bug_report),
             onPressed: _debugSession,
@@ -60,6 +200,7 @@ class _AssistantPageState extends ConsumerState<AssistantPage> {
               icon: const Icon(Icons.clear_all),
               onPressed: () {
                 ref.read(assistantProvider.notifier).clearConversation();
+                _resetSaveDialogFlag();
               },
             ),
         ],
@@ -67,7 +208,7 @@ class _AssistantPageState extends ConsumerState<AssistantPage> {
       body: Column(
         children: [
           Expanded(
-            child: _buildMessagesList(state),
+            child: _buildMessagesList(state, ttsService),
           ),
           if (state.error != null) _buildErrorBanner(state.error!),
           _buildInputSection(state),
@@ -76,7 +217,7 @@ class _AssistantPageState extends ConsumerState<AssistantPage> {
     );
   }
 
-  Widget _buildMessagesList(AssistantState state) {
+  Widget _buildMessagesList(AssistantState state, TtsService ttsService) {
     if (state.messages.isEmpty) {
       return const Center(
         child: Column(
@@ -110,12 +251,12 @@ class _AssistantPageState extends ConsumerState<AssistantPage> {
         }
 
         final message = state.messages[index];
-        return _buildMessageBubble(message, state);
+        return _buildMessageBubble(message, state, ttsService);
       },
     );
   }
 
-  Widget _buildMessageBubble(AssistantMessage message, AssistantState state) {
+  Widget _buildMessageBubble(AssistantMessage message, AssistantState state, TtsService ttsService) {
     // Check if this is a duplicate ingredients message
     bool isDuplicateIngredients = false;
     if (!message.isUser && message.ingredients != null) {
@@ -170,6 +311,19 @@ class _AssistantPageState extends ConsumerState<AssistantPage> {
                           _buildIngredients(message.ingredients!, state, message.nutrition),
                         if (message.instructions != null)
                           _buildInstructions(message.instructions!, message.nutrition),
+                        // Add TTS play button for assistant messages
+                        if (!message.isUser)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: IconButton(
+                              icon: Icon(
+                                ttsService.isPlaying ? Icons.stop : Icons.play_arrow,
+                                color: Colors.blue,
+                              ),
+                              onPressed: () => _toggleSpeech(message),
+                              tooltip: ttsService.isPlaying ? 'Stop' : 'Play',
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -220,7 +374,6 @@ class _AssistantPageState extends ConsumerState<AssistantPage> {
               ],
             ),
           ),
-          // Removed reasoning text
         ],
       ),
     );
@@ -291,15 +444,18 @@ class _AssistantPageState extends ConsumerState<AssistantPage> {
             ),
           ),
           const SizedBox(height: 12),
-          if (state.recipeSession?.instructions == null)
+          if (state.recipeSession?.instructions == null || state.recipeSession!.instructions!.isEmpty)
             ElevatedButton(
               onPressed: _getInstructions,
               child: const Text('Get Cooking Instructions'),
             )
           else
             Text(
-              'Instructions available below ✓',
-              style: TextStyle(color: Colors.green.shade600),
+              '✓ Instructions ready below',
+              style: TextStyle(
+                color: Colors.green.shade600,
+                fontWeight: FontWeight.w500,
+              ),
             ),
         ],
       ),
@@ -382,10 +538,27 @@ class _AssistantPageState extends ConsumerState<AssistantPage> {
   }
 
   Widget _buildInputSection(AssistantState state) {
+    final isRecording = state.isRecording;
+
     return Container(
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
+          if (!state.isLoading) ...[
+            IconButton(
+              icon: Icon(
+                isRecording ? Icons.stop : Icons.mic,
+                color: isRecording ? Colors.red : Colors.blue,
+              ),
+              onPressed: () {
+                if (isRecording) {
+                  _stopRecording();
+                } else {
+                  _startRecording();
+                }
+              },
+            ),
+          ],
           Expanded(
             child: TextField(
               controller: _textController,
@@ -395,18 +568,18 @@ class _AssistantPageState extends ConsumerState<AssistantPage> {
                   borderRadius: BorderRadius.circular(24),
                 ),
               ),
-              enabled: !state.isLoading,
+              enabled: !state.isLoading && !isRecording,
               onSubmitted: (_) => _sendMessage(),
             ),
           ),
           const SizedBox(width: 8),
-          if (!state.isLoading) ...[
+          if (!state.isLoading && !isRecording) ...[
             IconButton(
               icon: const Icon(Icons.send, color: Colors.blue),
               onPressed: _sendMessage,
             ),
           ],
-          if (state.isLoading) ...[
+          if (state.isLoading || isRecording) ...[
             const Padding(
               padding: EdgeInsets.all(8),
               child: SizedBox(

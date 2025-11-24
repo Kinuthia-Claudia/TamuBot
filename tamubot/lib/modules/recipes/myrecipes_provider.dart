@@ -1,232 +1,140 @@
-// lib/modules/recipes/recipe_provider.dart
-
+// lib/modules/recipes/recipes_provider.dart
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
+import 'package:tamubot/modules/authentication/auth_controller.dart';
 import 'package:tamubot/modules/recipes/recipe_service.dart';
-import 'package:tamubot/modules/recipes/recipes_model.dart';
 
-/// Recipe service provider
-final recipeServiceProvider = Provider<RecipeService>((ref) {
-  return RecipeService();
+final recipesServiceProvider = Provider<RecipesService>((ref) {
+  return RecipesService();
 });
 
-/// Recipes Notifier
-class RecipesNotifier extends StateNotifier<RecipesState> {
+class RecipesNotifier extends StateNotifier<AsyncValue<List<SavedRecipe>>> {
   final Ref ref;
-  final RecipeService service;
+  final RecipesService service;
+  bool _isDisposed = false;
 
-  RecipesNotifier(this.ref, this.service) : super(const RecipesState());
-
-  // -----------------------------------
-  // CLEAR STATE (on logout)
-  // -----------------------------------
-  void clear() {
-    state = const RecipesState();
+  RecipesNotifier(this.ref, this.service) : super(const AsyncValue.loading()) {
+    loadRecipes();
   }
 
-  // -----------------------------------
-  // LOAD USER RECIPES
-  // -----------------------------------
-  Future<void> loadUserRecipes() async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) return;
-
-    state = state.copyWith(isLoading: true, error: null);
-
-    try {
-      final savedRecipes = await service.getSavedRecipes(user.id);
-      final favoriteRecipes = await service.getFavoriteRecipes(user.id);
-
-      state = state.copyWith(
-        savedRecipes: savedRecipes,
-        favoriteRecipes: favoriteRecipes,
-        isLoading: false,
-      );
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'Failed to load recipes: $e',
-      );
+  @override
+  set state(AsyncValue<List<SavedRecipe>> value) {
+    if (!_isDisposed) {
+      super.state = value;
     }
   }
 
-  // -----------------------------------
-  // SAVE RECIPE
-  // -----------------------------------
-  Future<void> saveRecipe({
-    required String recipeTitle,
-    required Map<String, dynamic> recipeData,
-    List<String> dietaryTags = const [],
-    int? servingSize,
-    int? caloriesPerServing,
-    String? prepTime,
-    String? cookTime,
-    int? userRating,
-  }) async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) return;
+  @override
+  void dispose() {
+    _isDisposed = true;
+    super.dispose();
+  }
 
-    state = state.copyWith(isLoading: true, error: null);
+  Future<void> loadRecipes() async {
+    if (_isDisposed) return;
+    
+    state = const AsyncValue.loading();
 
     try {
-      final savedRecipe = await service.saveRecipe(
+      final user = ref.read(authControllerProvider).user;
+      if (user == null) {
+        if (!_isDisposed) {
+          state = const AsyncValue.data([]);
+        }
+        return;
+      }
+
+      final recipes = await service.getSavedRecipes(user.id);
+      if (!_isDisposed) {
+        state = AsyncValue.data(recipes);
+      }
+    } catch (e, st) {
+      if (!_isDisposed) {
+        state = AsyncValue.error(e, st);
+      }
+    }
+  }
+
+  Future<void> saveRecipe({
+    required String recipeTitle,
+    required RecipeData recipeData,
+    int? rating,
+    bool isFavorite = false,
+  }) async {
+    if (_isDisposed) return;
+    
+    try {
+      final user = ref.read(authControllerProvider).user;
+      if (user == null) throw Exception('User not authenticated');
+
+      await service.saveRecipe(
         userId: user.id,
         recipeTitle: recipeTitle,
         recipeData: recipeData,
-        dietaryTags: dietaryTags,
-        servingSize: servingSize,
-        caloriesPerServing: caloriesPerServing,
-        prepTime: prepTime,
-        cookTime: cookTime,
-        userRating: userRating,
+        rating: rating,
+        isFavorite: isFavorite,
       );
 
-      // Log interaction
-      await service.logInteraction(
-        userId: user.id,
-        interactionType: 'saved',
-        recipeId: savedRecipe.id,
-        interactionData: {'recipe_title': recipeTitle},
-      );
-
-      // Reload recipes to include the new one
-      await loadUserRecipes();
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'Failed to save recipe: $e',
-      );
+      // Reload recipes
+      await loadRecipes();
+    } catch (e, st) {
+      if (!_isDisposed) {
+        state = AsyncValue.error(e, st);
+      }
     }
   }
 
-  // -----------------------------------
-  // UPDATE RATING
-  // -----------------------------------
-  Future<void> updateRecipeRating({
-    required String recipeId,
-    required int rating,
-  }) async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) return;
-
+  Future<void> updateRating(String recipeId, int rating) async {
+    if (_isDisposed) return;
+    
     try {
-      final updatedRecipe = await service.updateRecipeRating(
+      await service.updateRecipeRating(
         recipeId: recipeId,
         rating: rating,
       );
-
-      // Log interaction
-      await service.logInteraction(
-        userId: user.id,
-        interactionType: 'rated',
-        recipeId: recipeId,
-        ratingValue: rating,
-      );
-
-      // Update local state
-      final updatedRecipes = state.savedRecipes.map((recipe) {
-        if (recipe.id == recipeId) {
-          return recipe.copyWith(userRating: rating);
-        }
-        return recipe;
-      }).toList();
-
-      final updatedFavorites = state.favoriteRecipes.map((recipe) {
-        if (recipe.id == recipeId) {
-          return recipe.copyWith(userRating: rating);
-        }
-        return recipe;
-      }).toList();
-
-      state = state.copyWith(
-        savedRecipes: updatedRecipes,
-        favoriteRecipes: updatedFavorites,
-      );
-    } catch (e) {
-      state = state.copyWith(error: 'Failed to update rating: $e');
+      await loadRecipes();
+    } catch (e, st) {
+      if (!_isDisposed) {
+        state = AsyncValue.error(e, st);
+      }
     }
   }
 
-  // -----------------------------------
-  // TOGGLE FAVORITE
-  // -----------------------------------
-  Future<void> toggleFavorite(String recipeId) async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) return;
-
+  Future<void> toggleFavorite(String recipeId, bool isFavorite) async {
+    if (_isDisposed) return;
+    
     try {
-      final recipe = state.savedRecipes.firstWhere((r) => r.id == recipeId);
-      final newFavoriteStatus = !recipe.isFavorite;
-
-      final updatedRecipe = await service.toggleFavorite(
-        recipeId: recipeId,
-        isFavorite: newFavoriteStatus,
-      );
-
-      // Update local state
-      final updatedRecipes = state.savedRecipes.map((r) {
-        if (r.id == recipeId) {
-          return r.copyWith(isFavorite: newFavoriteStatus);
-        }
-        return r;
-      }).toList();
-
-      final updatedFavorites = newFavoriteStatus
-          ? [...state.favoriteRecipes, updatedRecipe]
-          : state.favoriteRecipes.where((r) => r.id != recipeId).toList();
-
-      state = state.copyWith(
-        savedRecipes: updatedRecipes,
-        favoriteRecipes: updatedFavorites,
-      );
-    } catch (e) {
-      state = state.copyWith(error: 'Failed to toggle favorite: $e');
+      await service.toggleFavorite(recipeId, isFavorite);
+      await loadRecipes();
+    } catch (e, st) {
+      if (!_isDisposed) {
+        state = AsyncValue.error(e, st);
+      }
     }
   }
 
-  // -----------------------------------
-  // DELETE RECIPE
-  // -----------------------------------
   Future<void> deleteRecipe(String recipeId) async {
-    final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) return;
-
+    if (_isDisposed) return;
+    
     try {
       await service.deleteRecipe(recipeId);
-
-      // Update local state
-      final updatedRecipes = state.savedRecipes.where((r) => r.id != recipeId).toList();
-      final updatedFavorites = state.favoriteRecipes.where((r) => r.id != recipeId).toList();
-
-      state = state.copyWith(
-        savedRecipes: updatedRecipes,
-        favoriteRecipes: updatedFavorites,
-      );
-    } catch (e) {
-      state = state.copyWith(error: 'Failed to delete recipe: $e');
+      await loadRecipes();
+    } catch (e, st) {
+      if (!_isDisposed) {
+        state = AsyncValue.error(e, st);
+      }
     }
   }
 
-  // -----------------------------------
-  // CLEAR ERROR
-  // -----------------------------------
-  void clearError() {
-    state = state.copyWith(error: null);
+  void clear() {
+    if (!_isDisposed) {
+      state = const AsyncValue.data([]);
+    }
   }
 }
 
-/// Recipes provider that reacts to auth changes
-final recipesProvider = StateNotifierProvider<RecipesNotifier, RecipesState>((ref) {
-  final service = ref.watch(recipeServiceProvider);
-  final notifier = RecipesNotifier(ref, service);
-
-  // Load recipes when provider is initialized and user is authenticated
-  final user = Supabase.instance.client.auth.currentUser;
-  if (user != null) {
-    notifier.loadUserRecipes();
-  }
-
-  return notifier;
+final recipesProvider = StateNotifierProvider<RecipesNotifier, AsyncValue<List<SavedRecipe>>>((ref) {
+  final service = ref.watch(recipesServiceProvider);
+  return RecipesNotifier(ref, service);
 });
