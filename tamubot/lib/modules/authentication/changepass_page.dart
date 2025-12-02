@@ -12,50 +12,32 @@ class ChangePasswordScreen extends ConsumerStatefulWidget {
 class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+
   String? _error;
   String? _success;
   bool _isLoading = false;
-  bool _obscureNewPassword = true;
-  bool _obscureConfirmPassword = true;
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
 
-  void _toggleNewPasswordVisibility() {
-    setState(() {
-      _obscureNewPassword = !_obscureNewPassword;
-    });
-  }
-
-  void _toggleConfirmPasswordVisibility() {
-    setState(() {
-      _obscureConfirmPassword = !_obscureConfirmPassword;
-    });
-  }
+  void _toggleNew() => setState(() => _obscureNew = !_obscureNew);
+  void _toggleConfirm() => setState(() => _obscureConfirm = !_obscureConfirm);
 
   Future<void> _changePassword() async {
-    if (_newPasswordController.text != _confirmPasswordController.text) {
-      setState(() {
-        _error = "Passwords do not match";
-        _success = null;
-      });
+    final newPass = _newPasswordController.text.trim();
+    final confirmPass = _confirmPasswordController.text.trim();
+
+    if (newPass != confirmPass) {
+      setState(() { _error = "Passwords do not match"; _success = null; });
+      return;
+    }
+    if (newPass.length < 6) {
+      setState(() { _error = "Password must be at least 6 characters"; _success = null; });
       return;
     }
 
-    if (_newPasswordController.text.length < 6) {
-      setState(() {
-        _error = "Password must be at least 6 characters";
-        _success = null;
-      });
-      return;
-    }
+    setState(() { _isLoading = true; _error = null; _success = null; });
 
-    setState(() {
-      _isLoading = true;
-      _error = null;
-      _success = null;
-    });
-
-    final message = await ref
-        .read(authControllerProvider.notifier)
-        .changePassword(_newPasswordController.text);
+    final message = await ref.read(authControllerProvider.notifier).changePassword(newPass);
 
     setState(() => _isLoading = false);
 
@@ -64,229 +46,182 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         _success = "Password changed successfully!";
         _error = null;
       });
-      
-      // Navigate back to login after a short delay
+
       await Future.delayed(const Duration(seconds: 2));
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/login');
-      }
+      if (mounted) Navigator.pushReplacementNamed(context, '/login');
     } else {
-      setState(() {
-        _error = message;
-        _success = null;
-      });
+      setState(() { _error = message; _success = null; });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.green.shade50,
       appBar: AppBar(
+        backgroundColor: Colors.green.shade100,
+        elevation: 0,
         title: const Text("Change Password"),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pushReplacementNamed(context, '/login');
-          },
+          onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
         ),
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-              // Header
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Create New Password",
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Enter your new password below",
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                  ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 20),
+            Text(
+              "Create New Password",
+              style: TextStyle(
+                fontSize: 28,
+                color: Colors.green.shade800,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              "Enter and confirm your new password",
+              style: TextStyle(color: Colors.green.shade700, fontSize: 15),
+            ),
+            const SizedBox(height: 35),
+
+            Container(
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.green.shade100,
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  )
                 ],
               ),
-              const SizedBox(height: 40),
-
-              // Form Fields
-              Column(
+              child: Column(
                 children: [
+                  // New password
                   TextField(
                     controller: _newPasswordController,
-                    obscureText: _obscureNewPassword,
+                    obscureText: _obscureNew,
                     decoration: InputDecoration(
                       labelText: "New Password",
+                      filled: true,
+                      fillColor: Colors.green.shade50,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide.none,
                       ),
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscureNewPassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          color: Colors.grey,
+                          _obscureNew ? Icons.visibility_off : Icons.visibility,
                         ),
-                        onPressed: _toggleNewPasswordVisibility,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
+                        onPressed: _toggleNew,
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
+
+                  // Confirm password
                   TextField(
                     controller: _confirmPasswordController,
-                    obscureText: _obscureConfirmPassword,
+                    obscureText: _obscureConfirm,
                     decoration: InputDecoration(
                       labelText: "Confirm Password",
+                      filled: true,
+                      fillColor: Colors.green.shade50,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide.none,
                       ),
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscureConfirmPassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          color: Colors.grey,
+                          _obscureConfirm ? Icons.visibility_off : Icons.visibility,
                         ),
-                        onPressed: _toggleConfirmPasswordVisibility,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
+                        onPressed: _toggleConfirm,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
 
-                  // Error Message
-                  if (_error != null) ...[
+                  if (_error != null)
                     Container(
-                      width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.red[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red[100]!),
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.error_outline, color: Colors.red[400], size: 16),
+                          Icon(Icons.error_outline, color: Colors.red.shade400),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(
-                              _error!,
-                              style: TextStyle(
-                                color: Colors.red[700],
-                                fontSize: 14,
-                              ),
-                            ),
+                            child: Text(_error!, style: TextStyle(color: Colors.red.shade700)),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                  ],
 
-                  // Success Message
-                  if (_success != null) ...[
+                  if (_success != null)
                     Container(
-                      width: double.infinity,
+                      margin: const EdgeInsets.only(top: 12),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.green[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.green[100]!),
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.check_circle, color: Colors.green[400], size: 16),
+                          Icon(Icons.check_circle, color: Colors.green.shade400),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(
-                              _success!,
-                              style: TextStyle(
-                                color: Colors.green[700],
-                                fontSize: 14,
-                              ),
-                            ),
+                            child: Text(_success!, style: TextStyle(color: Colors.green.shade700)),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 8),
-                  ],
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 25),
 
-                  // Change Password Button
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 55,
                     child: _isLoading
                         ? const Center(child: CircularProgressIndicator())
                         : ElevatedButton(
                             onPressed: _changePassword,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue[600],
+                              backgroundColor: Colors.green.shade600,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(20),
                               ),
-                              elevation: 0,
                             ),
                             child: const Text(
                               "Change Password",
                               style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
                             ),
                           ),
                   ),
-                  const SizedBox(height: 16),
 
-                  // Cancel Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.pushReplacementNamed(context, '/login');
-                      },
-                      style: TextButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        "Cancel",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ),
-                  ),
+                  const SizedBox(height: 12),
+
+                  TextButton(
+                    onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+                    child: Text("Cancel", style: TextStyle(color: Colors.green.shade700)),
+                  )
                 ],
               ),
-            ],
-          ),
+            )
+          ],
         ),
       ),
     );
