@@ -13,7 +13,9 @@ import 'package:tamubot/modules/authentication/login_page.dart';
 import 'package:tamubot/modules/authentication/signup_page.dart';
 import 'package:tamubot/modules/authentication/splashscreen.dart';
 import 'package:tamubot/modules/home/home_page.dart';
-import 'package:tamubot/modules/authentication/otpverification_page.dart'; // 👈 add this
+import 'package:tamubot/modules/authentication/otpverification_page.dart';
+import 'package:tamubot/modules/profile/profile_page.dart';
+import 'package:tamubot/modules/settings/settings_page.dart'; 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
