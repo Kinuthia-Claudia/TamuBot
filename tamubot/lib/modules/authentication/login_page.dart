@@ -15,6 +15,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+
   String? _error;
   bool _rememberMe = false;
   bool _isLoading = false;
@@ -39,71 +40,38 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _togglePasswordVisibility() {
-    setState(() {
-      _obscurePassword = !_obscurePassword;
-    });
+    setState(() => _obscurePassword = !_obscurePassword);
   }
 
-  // Add this method for OTP phone input dialog
-  Future<String?> _showPhoneInputDialog(BuildContext context) async {
-    String phone = '';
+  Future<String?> _showEmailInputDialog(BuildContext context) async {
+    final controller = TextEditingController();
     return showDialog<String>(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Enter Phone Number'),
-          content: TextField(
-            onChanged: (value) => phone = value,
-            keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(
-              hintText: '+1234567890',
-              border: OutlineInputBorder(),
-            ),
+      builder: (context) => AlertDialog(
+        title: const Text("Enter your email"),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.emailAddress,
+          decoration: const InputDecoration(
+            labelText: "Email",
+            hintText: "you@example.com",
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, phone),
-              child: const Text('Send OTP'),
-            ),
-          ],
-        );
-      },
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text("Send Link"),
+          ),
+        ],
+      ),
     );
   }
-
-Future<String?> _showEmailInputDialog(BuildContext context) async {
-  final controller = TextEditingController();
-  return showDialog<String>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text("Enter your email"),
-      content: TextField(
-        controller: controller,
-        keyboardType: TextInputType.emailAddress,
-        decoration: const InputDecoration(
-          labelText: "Email",
-          hintText: "you@example.com",
-        ),
-      ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-        ElevatedButton(
-          onPressed: () => Navigator.pop(context, controller.text.trim()),
-          child: const Text("Send Link"),
-        ),
-      ],
-    ),
-  );
-}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.green.shade50,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
@@ -111,330 +79,340 @@ Future<String?> _showEmailInputDialog(BuildContext context) async {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 20),
-              // Header
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Welcome Back",
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Sign in to continue your journey",
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                  ),
-                ],
+
+              // HEADER
+              Text(
+                "Welcome Back",
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green.shade800,
+                ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 8),
+              Text(
+                "Sign in to continue your journey",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.green.shade700,
+                ),
+              ),
+              const SizedBox(height: 35),
 
-              // Form Fields
-              Column(
-                children: [
-                  TextField(
-                    controller: _emailController,
-                    decoration: InputDecoration(
-                      labelText: "Email",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      prefixIcon: const Icon(Icons.email_outlined),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
+              // FORM CARD
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.green.shade100,
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
                     ),
-                    keyboardType: TextInputType.emailAddress,
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: "Password",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          color: Colors.grey,
-                        ),
-                        onPressed: _togglePasswordVisibility,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Error Message
-                  if (_error != null) ...[
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.red[50],
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red[100]!),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.error_outline, color: Colors.red[400], size: 16),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _error!,
-                              style: TextStyle(
-                                color: Colors.red[700],
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 8),
                   ],
-
-                  // Remember Me & Forgot Password
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: _rememberMe,
-                            onChanged: (val) {
-                              setState(() => _rememberMe = val ?? false);
-                            },
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                          Text(
-                            "Remember me",
-                            style: TextStyle(
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                        ],
+                ),
+                child: Column(
+                  children: [
+                    // Email
+                    TextField(
+                      controller: _emailController,
+                      decoration: InputDecoration(
+                        labelText: "Email",
+                        filled: true,
+                        fillColor: Colors.green.shade50,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide.none,
+                        ),
+                        prefixIcon: const Icon(Icons.email_outlined),
                       ),
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const ForgotPasswordPage()),
-                          );
-                        },
-                        child: Text(
-                          "Forgot Password?",
-                          style: TextStyle(
-                            color: Colors.blue[600],
-                            fontWeight: FontWeight.w500,
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Password
+                    TextField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      decoration: InputDecoration(
+                        labelText: "Password",
+                        filled: true,
+                        fillColor: Colors.green.shade50,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide.none,
+                        ),
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: Colors.grey,
                           ),
+                          onPressed: _togglePasswordVisibility,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
+                    ),
+                    const SizedBox(height: 10),
 
-                  // Login Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: _isLoading
-                        ? const Center(child: CircularProgressIndicator())
-                        : ElevatedButton(
-                            onPressed: () async {
-                              setState(() {
-                                _isLoading = true;
-                                _error = null;
-                              });
-
-                              final result = await ref
-                                  .read(authControllerProvider.notifier)
-                                  .signIn(_emailController.text, _passwordController.text);
-
-                              setState(() => _isLoading = false);
-
-                              if (result == null) {
-                                // No OTP needed, go directly to home
-                                if (_rememberMe) {
-                                  await _saveRememberMeFlag(true);
-                                }
-                                /*if (mounted) {
-                                  Navigator.pushReplacementNamed(context, '/home');
-                                }*/
-                              } else if (result is String && result.length > 10) {
-                                // OTP needed, navigate to verification
-                                if (_rememberMe) {
-                                  await _saveRememberMeFlag(true);
-                                }
-                                if (mounted) {
-                                  Navigator.pushReplacementNamed(
-                                    context,
-                                    '/verify-otp',
-                                    arguments: {'phone': result},
-                                  );
-                                }
-                              } else {
-                                setState(() => _error = result);
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue[600],
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: const Text(
-                              "Sign In",
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                    // Error
+                    if (_error != null)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.error_outline,
+                                color: Colors.red.shade400),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _error!,
+                                style:
+                                    TextStyle(color: Colors.red.shade700),
                               ),
                             ),
-                          ),
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Divider
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Divider(color: Colors.grey[300]),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          "Or continue with",
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Divider(color: Colors.grey[300]),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Social + OTP Login Row
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Google Sign-In
-                      SizedBox(
-                        width: 60,
-                        height: 60,
-                        child: FloatingActionButton(
-                          onPressed: () async {
-                            setState(() => _isLoading = true);
-                            final message = await ref.read(authControllerProvider.notifier).signInWithGoogle();
-                            setState(() => _isLoading = false);
-
-                            if (message == "SUCCESS" && mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("Google sign-in successful")),
-                              );
-                              Navigator.pushReplacementNamed(context, '/home');
-                            } else if (message != null && mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(message)),
-                              );
-                            }
-                          },
-                          backgroundColor: Colors.white,
-                          elevation: 1,
-                          child: Image.asset(
-                            'assets/google.png',
-                            width: 24,
-                            height: 24,
-                          ),
+                          ],
                         ),
                       ),
 
-                      const SizedBox(width: 30),
+                    const SizedBox(height: 12),
 
-                      // Login with OTP Option
-// Inside your login screen’s Row
-SizedBox(
-  width: 60,
-  height: 60,
-  child: FloatingActionButton(
-    onPressed: () async {
-      // Ask user for their email
-      final email = await _showEmailInputDialog(context);
-      if (email == null || email.isEmpty) return;
-
-      try {
-        await Supabase.instance.client.auth.signInWithOtp(
-  email: email,
-  emailRedirectTo: 'com.example.tamubot://login-callback',
-);
-
-  
-        if (mounted) {
-          Navigator.pushNamed(context, '/magic-link-wait', arguments: {'email': email});
-        }
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to send magic link: $e")),
-        );
-      }
-    },
-    backgroundColor: Colors.white,
-    elevation: 1,
-    child: const Icon(Icons.email_outlined, color: Colors.blue, size: 28),
-  ),
-),
-
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Sign Up Link
-                  Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    // Remember Me + Forgot
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          "Don't have account? ",
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                          ),
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _rememberMe,
+                              onChanged: (val) {
+                                setState(() => _rememberMe = val ?? false);
+                              },
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            ),
+                            Text(
+                              "Remember me",
+                              style: TextStyle(
+                                color: Colors.green.shade900,
+                              ),
+                            ),
+                          ],
                         ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.pushNamed(context, '/signup');
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ForgotPasswordPage(),
+                              ),
+                            );
                           },
                           child: Text(
-                            "Sign up",
+                            "Forgot Password?",
                             style: TextStyle(
-                              color: Colors.blue[600],
+                              color: Colors.green.shade700,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
+
+                    const SizedBox(height: 20),
+
+                    // LOGIN BUTTON
+                    SizedBox(
+                      width: double.infinity,
+                      height: 55,
+                      child: _isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : ElevatedButton(
+                              onPressed: () async {
+                                setState(() {
+                                  _isLoading = true;
+                                  _error = null;
+                                });
+
+                                final result = await ref
+                                    .read(authControllerProvider.notifier)
+                                    .signIn(
+                                      _emailController.text,
+                                      _passwordController.text,
+                                    );
+
+                                setState(() => _isLoading = false);
+
+                                if (result == null) {
+                                  if (_rememberMe) {
+                                    await _saveRememberMeFlag(true);
+                                  }
+                                } else if (result.length > 10) {
+                                  if (_rememberMe) {
+                                    await _saveRememberMeFlag(true);
+                                  }
+                                  if (mounted) {
+                                    Navigator.pushReplacementNamed(
+                                      context,
+                                      '/verify-otp',
+                                      arguments: {'phone': result},
+                                    );
+                                  }
+                                } else {
+                                  setState(() => _error = result);
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.green.shade600,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              child: const Text(
+                                "Sign In",
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 30),
+
+              // Social + OTP
+              Center(
+                child: Column(
+                  children: [
+                    Text(
+                      "Or continue with",
+                      style: TextStyle(color: Colors.green.shade900),
+                    ),
+                    const SizedBox(height: 15),
+
+                    // Google + Email OTP Row
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // GOOGLE
+                        SizedBox(
+                          width: 60,
+                          height: 60,
+                          child: FloatingActionButton(
+                            backgroundColor: Colors.white,
+                            elevation: 2,
+                            onPressed: () async {
+                              setState(() => _isLoading = true);
+                              final message = await ref
+                                  .read(authControllerProvider.notifier)
+                                  .signInWithGoogle();
+                              setState(() => _isLoading = false);
+
+                              if (mounted) {
+                                if (message == "SUCCESS") {
+                                  ScaffoldMessenger.of(context)
+                                      .showSnackBar(const SnackBar(
+                                    content: Text("Google sign-in successful"),
+                                  ));
+                                } else if (message != null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(message)),
+                                  );
+                                }
+                              }
+                            },
+                            child: Image.asset(
+                              "assets/google.png",
+                              width: 28,
+                              height: 28,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 28),
+
+                        // EMAIL OTP
+                        SizedBox(
+                          width: 60,
+                          height: 60,
+                          child: FloatingActionButton(
+                            backgroundColor: Colors.white,
+                            elevation: 2,
+                            onPressed: () async {
+                              final email =
+                                  await _showEmailInputDialog(context);
+                              if (email == null || email.isEmpty) return;
+
+                              try {
+                                await Supabase.instance.client.auth
+                                    .signInWithOtp(
+                                  email: email,
+                                  emailRedirectTo:
+                                      'com.example.tamubot://login-callback',
+                                );
+
+                                if (mounted) {
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/magic-link-wait',
+                                    arguments: {'email': email},
+                                  );
+                                }
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text("Failed to send magic link: $e"),
+                                  ),
+                                );
+                              }
+                            },
+                            child: const Icon(
+                              Icons.email_outlined,
+                              color: Colors.green,
+                              size: 28,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    // Sign Up Redirect
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushNamed(context, '/signup');
+                      },
+                      child: RichText(
+                        text: TextSpan(
+                          text: "Don't have an account? ",
+                          style: TextStyle(color: Colors.green.shade900),
+                          children: [
+                            TextSpan(
+                              text: "Sign Up",
+                              style: TextStyle(
+                                color: Colors.green.shade700,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

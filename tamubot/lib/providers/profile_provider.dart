@@ -1,91 +1,102 @@
 // lib/providers/profile_provider.dart
-import 'dart:io';
 
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:tamubot/modules/profile/profile_model.dart';
-import 'package:tamubot/modules/profile/profile_service.dart';
+import 'package:tamubot/modules/authentication/auth_controller.dart';
 
-/// Profile service provider (so it can be overridden in tests)
+import 'package:tamubot/modules/profile/profile_service.dart';
+import 'package:tamubot/modules/profile/profile_model.dart';
+
+/// Profile service provider
 final profileServiceProvider = Provider<ProfileService>((ref) {
   return ProfileService();
 });
 
-/// The profile notifier manages loading/saving the current user's profile.
+/// Profile Notifier
 class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
   final Ref ref;
-  final ProfileService _service;
+  final ProfileService service;
 
-  ProfileNotifier(this.ref, this._service) : super(const AsyncValue.loading()) {
-    _init();
+  ProfileNotifier(this.ref, this.service)
+      : super(const AsyncValue.data(null));
+
+  // -----------------------------------
+  // CLEAR PROFILE (on logout)
+  // -----------------------------------
+  void clear() {
+    state = const AsyncValue.data(null);
   }
 
-  Future<void> _init() async {
+  // -----------------------------------
+  // LOAD PROFILE
+  // -----------------------------------
+  Future<void> load(String userId) async {
+    state = const AsyncValue.loading();
+
     try {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) {
-        state = const AsyncValue.data(null);
+      final profile = await service.fetchProfile(userId);
+
+      if (profile != null) {
+        state = AsyncValue.data(profile);
         return;
       }
-      await loadProfile(user.id);
+
+      // Create default row if missing
+      final user = Supabase.instance.client.auth.currentUser;
+
+      final defaultProfile = ProfileModel(
+        id: userId,
+        username: null,
+        email: user?.email,
+        bio: null,
+        avatarUrl: null,
+        dietaryPreferences: const [],
+      );
+
+      await service.createProfileIfNotExists(defaultProfile);
+      state = AsyncValue.data(defaultProfile);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
   }
 
-  Future<void> loadProfile(String userId) async {
-    state = const AsyncValue.loading();
-    try {
-      final profile = await _service.fetchProfile(userId);
-      if (profile == null) {
-        // Create default profile record so RLS allows future updates
-        final defaultProfile = ProfileModel(
-          id: userId,
-          username: null,
-          email: Supabase.instance.client.auth.currentUser?.email,
-          bio: null,
-          avatarUrl: null,
-          dietaryPreferences: [],
-        );
-        await _service.createProfileIfNotExists(defaultProfile);
-        state = AsyncValue.data(defaultProfile);
-      } else {
-        state = AsyncValue.data(profile);
-      }
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
-    }
-  }
-
-  /// Update profile fields (partial)
-  Future<void> updateProfilePartial(Map<String, dynamic> changes) async {
+  // -----------------------------------
+  // UPDATE PARTIAL
+  // -----------------------------------
+  Future<void> updatePartial(Map<String, dynamic> changes) async {
     final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) throw Exception('No logged in user.');
+    if (user == null) return;
 
-    state = AsyncValue.loading();
+    state = const AsyncValue.loading();
+
     try {
-      final updated = await _service.updateProfile(user.id, changes);
+      final updated = await service.updateProfile(user.id, changes);
       state = AsyncValue.data(updated);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
   }
 
-  /// Optional: upload avatar and update avatar_url
-  Future<void> uploadAvatarAndSave(File file) async {
+  // -----------------------------------
+  // UPLOAD AVATAR
+  // -----------------------------------
+  Future<void> uploadAvatar(File file) async {
     final user = Supabase.instance.client.auth.currentUser;
-    if (user == null) throw Exception('No logged in user.');
+    if (user == null) return;
 
-    state = AsyncValue.loading();
+    state = const AsyncValue.loading();
+
     try {
-      final url = await _service.uploadAvatar(user.id, file);
+      final url = await service.uploadAvatar(user.id, file);
+
       if (url != null) {
-        final updated = await _service.updateProfile(user.id, {'avatar_url': url});
+        final updated = await service.updateProfile(user.id, {
+          'avatar_url': url,
+        });
+
         state = AsyncValue.data(updated);
-      } else {
-        // If upload returns null, just reload profile
-        await loadProfile(user.id);
       }
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -93,9 +104,22 @@ class ProfileNotifier extends StateNotifier<AsyncValue<ProfileModel?>> {
   }
 }
 
-/// Public provider for profile state
+/// Profile provider that reacts to auth changes
 final profileProvider =
     StateNotifierProvider<ProfileNotifier, AsyncValue<ProfileModel?>>((ref) {
+  final auth = ref.watch(authControllerProvider);
   final service = ref.watch(profileServiceProvider);
-  return ProfileNotifier(ref, service);
+
+  final notifier = ProfileNotifier(ref, service);
+
+  if (!auth.isAuthenticated) {
+    notifier.clear();
+    return notifier;
+  }
+
+  if (auth.user != null) {
+    notifier.load(auth.user!.id);
+  }
+
+  return notifier;
 });

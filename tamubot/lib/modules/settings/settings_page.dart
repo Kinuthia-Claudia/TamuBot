@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,7 +12,7 @@ final settingsProvider =
   (ref) => SettingsController(),
 );
 
-/// 🧩 SETTINGS STATE
+///  SETTINGS STATE
 class SettingsState {
   final int defaultTimer;
   final bool vibrateOnTimerEnd;
@@ -60,7 +61,7 @@ class SettingsState {
       );
 }
 
-/// 🧭 CONTROLLER
+/// CONTROLLER
 class SettingsController extends StateNotifier<SettingsState> {
   SettingsController()
       : super(const SettingsState(
@@ -124,7 +125,7 @@ class SettingsController extends StateNotifier<SettingsState> {
     );
   }
 
-  /// 🚨 Delete account via Supabase Edge Function
+  ///  Delete account via Supabase Edge Function
   Future<String?> deleteAccount() async {
     try {
       final client = Supabase.instance.client;
@@ -133,7 +134,7 @@ class SettingsController extends StateNotifier<SettingsState> {
       if (user == null) return "No user logged in";
 
       const functionUrl =
-          'https://gnkvcfoatmbpuoonyxeu.supabase.co/functions/v1/delete-user'; // 🔧 Replace with your real function URL
+          'https://gnkvcfoatmbpuoonyxeu.supabase.co/functions/v1/delete-user';
 
       final response = await http.post(
         Uri.parse(functionUrl),
@@ -158,7 +159,7 @@ class SettingsController extends StateNotifier<SettingsState> {
   }
 }
 
-/// 🧱 SETTINGS PAGE UI
+///  SETTINGS PAGE UI
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
@@ -168,103 +169,133 @@ class SettingsPage extends ConsumerWidget {
     final controller = ref.read(settingsProvider.notifier);
 
     return Scaffold(
+      backgroundColor: Colors.green.shade50,
       appBar: AppBar(
         title: const Text('Settings'),
-        backgroundColor: Colors.brown,
+        backgroundColor: Colors.green.shade600,
+        foregroundColor: Colors.white,
       ),
       body: ListView(
         children: [
           const _SectionHeader(title: "Timers"),
-          ListTile(
-            title: const Text("Default Timer Duration"),
-            subtitle: Text("${settings.defaultTimer} minutes"),
-            trailing: DropdownButton<int>(
-              value: settings.defaultTimer,
-              items: [5, 10, 15, 20, 30]
-                  .map((v) => DropdownMenuItem(value: v, child: Text("$v min")))
-                  .toList(),
-              onChanged: (val) {
-                if (val != null) controller.updateTimer(val);
-              },
-            ),
-          ),
-          SwitchListTile(
-            title: const Text("Vibrate when timer ends"),
-            value: settings.vibrateOnTimerEnd,
-            onChanged: controller.toggleVibrate,
-          ),
+          
+          // Timer Card with Countdown
+          _TimerCard(settings: settings, controller: controller),
 
           const _SectionHeader(title: "Notifications"),
-          SwitchListTile(
-            title: const Text("Daily cooking inspiration"),
-            value: settings.dailyInspiration,
-            onChanged: controller.toggleDailyInspiration,
-          ),
-          SwitchListTile(
-            title: const Text("Weekly grocery summary"),
-            value: settings.weeklySummary,
-            onChanged: controller.toggleWeeklySummary,
+          _SettingsCard(
+            children: [
+              SwitchListTile(
+                title: Text(
+                  "Daily cooking inspiration",
+                  style: TextStyle(color: Colors.green.shade800),
+                ),
+                value: settings.dailyInspiration,
+                onChanged: controller.toggleDailyInspiration,
+                activeColor: Colors.green.shade600,
+              ),
+              SwitchListTile(
+                title: Text(
+                  "Weekly grocery summary",
+                  style: TextStyle(color: Colors.green.shade800),
+                ),
+                value: settings.weeklySummary,
+                onChanged: controller.toggleWeeklySummary,
+                activeColor: Colors.green.shade600,
+              ),
+            ],
           ),
 
           const _SectionHeader(title: "Privacy & Data"),
-          SwitchListTile(
-            title: const Text("Analytics opt-in"),
-            value: settings.analyticsOptIn,
-            onChanged: controller.toggleAnalyticsOptIn,
-          ),
-          ListTile(
-            title: const Text("Clear local data"),
-            trailing: const Icon(Icons.cleaning_services_outlined),
-            onTap: () async {
-              final confirm = await _confirmDialog(context,
-                  "Are you sure you want to clear local data?");
-              if (confirm) {
-                await controller.clearLocalData();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Local data cleared")),
-                  );
-                }
-              }
-            },
-          ),
-          ListTile(
-            title: const Text("Delete account"),
-            textColor: Colors.red,
-            trailing: const Icon(Icons.delete_forever, color: Colors.red),
-            onTap: () async {
-              final confirm = await _confirmDialog(
-                  context, "This will permanently delete your account.");
-              if (confirm) {
-                final msg = await controller.deleteAccount();
-                if (msg == null && context.mounted) {
-                  // ✅ Navigate to login screen
-                  Navigator.of(context)
-                      .pushNamedAndRemoveUntil('/login', (r) => false);
-                } else if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(msg ?? 'Error deleting account')),
-                  );
-                }
-              }
-            },
+          _SettingsCard(
+            children: [
+              SwitchListTile(
+                title: Text(
+                  "Analytics opt-in",
+                  style: TextStyle(color: Colors.green.shade800),
+                ),
+                value: settings.analyticsOptIn,
+                onChanged: controller.toggleAnalyticsOptIn,
+                activeColor: Colors.green.shade600,
+              ),
+              ListTile(
+                title: Text(
+                  "Clear local data",
+                  style: TextStyle(color: Colors.green.shade800),
+                ),
+                trailing: Icon(Icons.cleaning_services_outlined, color: Colors.green.shade600),
+                onTap: () async {
+                  final confirm = await _confirmDialog(context,
+                      "Are you sure you want to clear local data?");
+                  if (confirm) {
+                    await controller.clearLocalData();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text("Local data cleared"),
+                          backgroundColor: Colors.green.shade600,
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
+              ListTile(
+                title: const Text(
+                  "Delete account",
+                  style: TextStyle(color: Colors.red),
+                ),
+                trailing: const Icon(Icons.delete_forever, color: Colors.red),
+                onTap: () async {
+                  final confirm = await _confirmDialog(
+                      context, "This will permanently delete your account.");
+                  if (confirm) {
+                    final msg = await controller.deleteAccount();
+                    if (msg == null && context.mounted) {
+                      Navigator.of(context)
+                          .pushNamedAndRemoveUntil('/login', (r) => false);
+                    } else if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(msg ?? 'Error deleting account'),
+                          backgroundColor: Colors.red.shade400,
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
+            ],
           ),
 
           const _SectionHeader(title: "About"),
-          ListTile(
-            title: const Text("App Version"),
-            subtitle: const Text("1.0.0"),
-            leading: const Icon(Icons.info_outline),
-          ),
-          ListTile(
-            title: const Text("Developed by"),
-            subtitle: const Text("Kinuthia Claudia"),
-            leading: const Icon(Icons.code),
-          ),
-          ListTile(
-            title: const Text("Contact Support"),
-            subtitle: const Text("support@tamubot.com"),
-            leading: const Icon(Icons.email_outlined),
+          _SettingsCard(
+            children: [
+              ListTile(
+                title: Text(
+                  "App Version",
+                  style: TextStyle(color: Colors.green.shade800),
+                ),
+                subtitle: const Text("1.0.0"),
+                leading: Icon(Icons.info_outline, color: Colors.green.shade600),
+              ),
+              ListTile(
+                title: Text(
+                  "Developed by",
+                  style: TextStyle(color: Colors.green.shade800),
+                ),
+                subtitle: const Text("Kinuthia Claudia"),
+                leading: Icon(Icons.code, color: Colors.green.shade600),
+              ),
+              ListTile(
+                title: Text(
+                  "Contact Support",
+                  style: TextStyle(color: Colors.green.shade800),
+                ),
+                subtitle: const Text("support@tamubot.com"),
+                leading: Icon(Icons.email_outlined, color: Colors.green.shade600),
+              ),
+            ],
           ),
         ],
       ),
@@ -275,17 +306,30 @@ class SettingsPage extends ConsumerWidget {
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text("Confirm"),
-            content: Text(message),
+            backgroundColor: Colors.green.shade50,
+            title: Text(
+              "Confirm",
+              style: TextStyle(color: Colors.green.shade800),
+            ),
+            content: Text(
+              message,
+              style: TextStyle(color: Colors.green.shade700),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text("Cancel"),
+                child: Text(
+                  "Cancel",
+                  style: TextStyle(color: Colors.green.shade700),
+                ),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context, true),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                 ),
                 child: const Text("Yes"),
               ),
@@ -296,7 +340,258 @@ class SettingsPage extends ConsumerWidget {
   }
 }
 
-/// 🪶 Simple section title widget
+/// 🕐 Timer Card with Countdown Display
+class _TimerCard extends ConsumerStatefulWidget {
+  final SettingsState settings;
+  final SettingsController controller;
+
+  const _TimerCard({
+    required this.settings,
+    required this.controller,
+  });
+
+  @override
+  ConsumerState<_TimerCard> createState() => _TimerCardState();
+}
+
+class _TimerCardState extends ConsumerState<_TimerCard> {
+  Duration _remainingTime = Duration.zero;
+  bool _isRunning = false;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _remainingTime = Duration(minutes: widget.settings.defaultTimer);
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    if (_isRunning) return;
+    
+    setState(() {
+      _isRunning = true;
+    });
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!_isRunning) {
+        timer.cancel();
+        return;
+      }
+
+      setState(() {
+        if (_remainingTime.inSeconds > 0) {
+          _remainingTime = _remainingTime - const Duration(seconds: 1);
+        } else {
+          _timerCompleted();
+          timer.cancel();
+        }
+      });
+    });
+  }
+
+  void _timerCompleted() {
+    setState(() {
+      _isRunning = false;
+      _remainingTime = Duration.zero;
+    });
+    
+    // Trigger vibration if enabled
+    if (widget.settings.vibrateOnTimerEnd) {
+      // You can add vibration logic here using HapticFeedback
+      // HapticFeedback.vibrate();
+    }
+    
+    // Show completion notification
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Timer completed!'),
+        backgroundColor: Colors.green.shade600,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  void _stopTimer() {
+    setState(() {
+      _isRunning = false;
+    });
+    _timer?.cancel();
+  }
+
+  void _resetTimer() {
+    setState(() {
+      _isRunning = false;
+      _remainingTime = Duration(minutes: widget.settings.defaultTimer);
+    });
+    _timer?.cancel();
+  }
+
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    
+    return '$minutes:$seconds';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _SettingsCard(
+      children: [
+        // Timer Display
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.green.shade50,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.green.shade200),
+          ),
+          child: Column(
+            children: [
+              Text(
+                _isRunning ? 'Timer Running' : 'Set Timer',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green.shade800,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Countdown Display
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: _isRunning ? Colors.green.shade400 : Colors.green.shade300,
+                    width: 4,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.green.shade100,
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  _formatDuration(_remainingTime),
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: _isRunning ? Colors.green.shade700 : Colors.green.shade600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Timer Controls
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  if (!_isRunning)
+                    ElevatedButton.icon(
+                      onPressed: _startTimer,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green.shade600,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      icon: const Icon(Icons.play_arrow, color: Colors.white),
+                      label: const Text(
+                        'Start',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    )
+                  else
+                    ElevatedButton.icon(
+                      onPressed: _stopTimer,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade400,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      icon: const Icon(Icons.stop, color: Colors.white),
+                      label: const Text(
+                        'Stop',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  
+                  OutlinedButton.icon(
+                    onPressed: _resetTimer,
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: Colors.green.shade600),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    icon: Icon(Icons.refresh, color: Colors.green.shade600),
+                    label: Text(
+                      'Reset',
+                      style: TextStyle(color: Colors.green.shade600),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // Timer Settings
+        ListTile(
+          title: Text(
+            "Default Timer Duration",
+            style: TextStyle(color: Colors.green.shade800),
+          ),
+          subtitle: Text(
+            "${widget.settings.defaultTimer} minutes",
+            style: TextStyle(color: Colors.green.shade700),
+          ),
+          trailing: DropdownButton<int>(
+            value: widget.settings.defaultTimer,
+            items: [5, 10, 15, 20, 30]
+                .map((v) => DropdownMenuItem(
+                      value: v,
+                      child: Text(
+                        "$v min",
+                        style: TextStyle(color: Colors.green.shade800),
+                      ),
+                    ))
+                .toList(),
+            onChanged: (val) {
+              if (val != null) {
+                widget.controller.updateTimer(val);
+                _resetTimer(); // Reset to new duration
+              }
+            },
+          ),
+        ),
+        SwitchListTile(
+          title: Text(
+            "Vibrate when timer ends",
+            style: TextStyle(color: Colors.green.shade800),
+          ),
+          value: widget.settings.vibrateOnTimerEnd,
+          onChanged: widget.controller.toggleVibrate,
+          activeColor: Colors.green.shade600,
+        ),
+      ],
+    );
+  }
+}
+
+/// 🪶 Section Header
 class _SectionHeader extends StatelessWidget {
   final String title;
   const _SectionHeader({required this.title});
@@ -304,11 +599,44 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.brown.shade50,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Text(title,
-          style: const TextStyle(
-              fontWeight: FontWeight.bold, color: Colors.brown, fontSize: 16)),
+      color: Colors.green.shade100,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      child: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.green.shade800,
+          fontSize: 16,
+        ),
+      ),
+    );
+  }
+}
+
+/// 🎴 Settings Card Container
+class _SettingsCard extends StatelessWidget {
+  final List<Widget> children;
+
+  const _SettingsCard({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.shade100,
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: children,
+      ),
     );
   }
 }
