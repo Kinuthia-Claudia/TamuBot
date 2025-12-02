@@ -14,6 +14,7 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final currentIndex = ref.watch(navigationIndexProvider);
 
+    // Define the pages for each tab
     final pages = [
       const HomeContent(), 
       const ProfilePage(),
@@ -33,7 +34,7 @@ class HomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: AssistantPage(), 

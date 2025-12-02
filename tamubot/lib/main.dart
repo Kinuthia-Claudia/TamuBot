@@ -12,10 +12,10 @@ import 'package:tamubot/modules/authentication/forgotpass_page.dart';
 import 'package:tamubot/modules/authentication/login_page.dart';
 import 'package:tamubot/modules/authentication/signup_page.dart';
 import 'package:tamubot/modules/authentication/splashscreen.dart';
-import 'package:tamubot/modules/authentication/otpverification_page.dart';
 import 'package:tamubot/modules/home/home_page.dart';
+import 'package:tamubot/modules/authentication/otpverification_page.dart';
 import 'package:tamubot/modules/profile/profile_page.dart';
-import 'package:tamubot/modules/settings/settings_page.dart';
+import 'package:tamubot/modules/settings/settings_page.dart'; 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -133,23 +133,9 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'Kenyan Cooking Assistant',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.brown,
-        scaffoldBackgroundColor: const Color(0xFFF9F4F1),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.brown,
-          foregroundColor: Colors.white,
-          elevation: 2,
-        ),
-        inputDecorationTheme: const InputDecorationTheme(
-          border: OutlineInputBorder(),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.brown, width: 2),
-          ),
-        ),
-      ),
+      theme: ThemeData(primarySwatch: Colors.brown),
       navigatorKey: _navigatorKey,
-      initialRoute: '/splash',
+      initialRoute: '/home',
       routes: {
         '/splash': (_) => SplashScreen(
               onSplashComplete: _onSplashComplete,
