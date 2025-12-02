@@ -38,11 +38,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     const ProfilePage(),
   ];
 
-  final List<String> _pageTitles = [
-    'Users Management',
-    'Analytics',
-    'Profile',
-  ];
 
   @override
   Widget build(BuildContext context) {

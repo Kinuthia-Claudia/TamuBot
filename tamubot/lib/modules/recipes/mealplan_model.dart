@@ -1,4 +1,3 @@
-// lib/modules/meal_plans/meal_plan_models.dart
 class MealPlan {
   final String id;
   final String name;

@@ -1,4 +1,3 @@
-// lib/providers/settings_provider.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
@@ -82,6 +81,7 @@ final settingsProvider =
     final userId = auth.user!.id;
 
     // Only reload if user changed
+    // ignore: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
     if (notifier.state.currentUserId != userId) {
       notifier.loadSettingsForUser(userId);
     }

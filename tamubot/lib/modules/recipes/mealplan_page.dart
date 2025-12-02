@@ -1,4 +1,3 @@
-// lib/modules/meal_plans/meal_plans_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tamubot/modules/recipes/mealplan_detail.dart';

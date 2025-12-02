@@ -1,4 +1,3 @@
-// lib/modules/profile/profile_page.dart
 import 'dart:io';
 
 import 'package:flutter/material.dart';

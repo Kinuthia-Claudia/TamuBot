@@ -1,12 +1,6 @@
-// lib/providers/auth_controller.dart
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:tamubot/modules/VA/assistant_provider.dart';
-import 'package:tamubot/modules/recipes/myrecipes_provider.dart';
-
-import 'package:tamubot/providers/profile_provider.dart';
 
 /// ---------------- AUTH STATE ----------------
 class AuthState {
@@ -15,10 +9,7 @@ class AuthState {
 
   AuthState({required this.isAuthenticated, this.user});
 
-  AuthState copyWith({
-    bool? isAuthenticated,
-    User? user,
-  }) {
+  AuthState copyWith({bool? isAuthenticated, User? user}) {
     return AuthState(
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
       user: user ?? this.user,
@@ -32,7 +23,7 @@ class AuthController extends StateNotifier<AuthState> {
   final Ref ref;
 
   AuthController(this._client, this.ref)
-      : super(AuthState(isAuthenticated: false)) {
+    : super(AuthState(isAuthenticated: false)) {
     _initializeSession();
     _listenAuth();
   }
@@ -56,7 +47,7 @@ class AuthController extends StateNotifier<AuthState> {
 
       if (user == null) {
         state = AuthState(isAuthenticated: false);
-        
+
         return;
       }
 
@@ -64,7 +55,6 @@ class AuthController extends StateNotifier<AuthState> {
 
       // Ensure the profile exists for every logged-in user
       _ensureProfileExists(user);
-    
     });
   }
 
@@ -123,8 +113,6 @@ class AuthController extends StateNotifier<AuthState> {
 
         print('✅ Profile inserted');
 
-    
-
         return "Please check your email to confirm your account.";
       }
 
@@ -151,8 +139,6 @@ class AuthController extends StateNotifier<AuthState> {
 
       state = state.copyWith(isAuthenticated: true, user: user);
 
-    
-
       return null;
     } on AuthException catch (e) {
       return e.message;
@@ -161,9 +147,7 @@ class AuthController extends StateNotifier<AuthState> {
     }
   }
 
-  // ---------------------------------------------------------
   // GOOGLE SIGN-IN
-  // ---------------------------------------------------------
   Future<String?> signInWithGoogle() async {
     try {
       await _client.auth.signInWithOAuth(
@@ -202,8 +186,9 @@ class AuthController extends StateNotifier<AuthState> {
   // ---------------------------------------------------------
   Future<String?> changePassword(String newPassword) async {
     try {
-      final response =
-          await _client.auth.updateUser(UserAttributes(password: newPassword));
+      final response = await _client.auth.updateUser(
+        UserAttributes(password: newPassword),
+      );
 
       return response.user != null
           ? "Password updated successfully."
@@ -235,8 +220,6 @@ class AuthController extends StateNotifier<AuthState> {
   Future<void> signOut() async {
     await _client.auth.signOut();
     state = AuthState(isAuthenticated: false);
-
-   
   }
 
   // ---------------------------------------------------------
@@ -254,8 +237,9 @@ class AuthController extends StateNotifier<AuthState> {
 }
 
 /// ---------------- PROVIDER ----------------
-final authControllerProvider =
-    StateNotifierProvider<AuthController, AuthState>((ref) {
-  final client = Supabase.instance.client;
-  return AuthController(client, ref);
-});
+final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
+  (ref) {
+    final client = Supabase.instance.client;
+    return AuthController(client, ref);
+  },
+);

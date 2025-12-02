@@ -25,7 +25,7 @@ class _EmailConfirmationHandlerState extends ConsumerState<EmailConfirmationHand
     // Check if user is already authenticated (after email confirmation)
     final currentSession = supabase.auth.currentSession;
     
-    if (currentSession != null && currentSession.user?.emailConfirmedAt != null) {
+    if (currentSession != null && currentSession.user.emailConfirmedAt != null) {
       // User is confirmed and logged in
       _navigateToHome();
       return;
@@ -49,7 +49,7 @@ class _EmailConfirmationHandlerState extends ConsumerState<EmailConfirmationHand
     await Future.delayed(const Duration(seconds: 3));
     
     final updatedSession = supabase.auth.currentSession;
-    if (updatedSession != null && updatedSession.user?.emailConfirmedAt != null) {
+    if (updatedSession != null && updatedSession.user.emailConfirmedAt != null) {
       _navigateToHome();
     } else {
       _showConfirmationRequired();

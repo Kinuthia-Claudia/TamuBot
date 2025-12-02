@@ -20,7 +20,6 @@ import 'package:tamubot/modules/settings/settings_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ Load environment variables and initialize Supabase
   await dotenv.load(fileName: '.env');
   await SupabaseConfig.init();
 
@@ -43,10 +42,8 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _listenForDeepLinks();
-    // Don't setup auth listener immediately - let splash screen handle it
   }
 
-  /// ✅ Listen for magic link or OAuth redirect deep links (via app_links)
   void _listenForDeepLinks() {
     final appLinks = AppLinks();
 
@@ -57,7 +54,6 @@ class _MyAppState extends State<MyApp> {
       try {
         final client = Supabase.instance.client;
 
-        // ✅ Recover Supabase session from the deep link
         await client.auth.getSessionFromUrl(uri);
 
         if (!mounted) return;
@@ -70,7 +66,6 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  /// ✅ Setup auth listener after splash screen
   void _setupAuthListener() {
     final client = Supabase.instance.client;
 
@@ -80,7 +75,6 @@ class _MyAppState extends State<MyApp> {
 
       debugPrint('🔐 Auth state changed: $event');
 
-      // Only handle auth changes if splash screen is done
       if (!_isSplashScreenActive) {
         if (event == AuthChangeEvent.passwordRecovery) {
           _navigateToChangePassword();
@@ -93,14 +87,12 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  /// ✅ Called by splash screen when it's done
   void _onSplashComplete() {
     _isSplashScreenActive = false;
-    _setupAuthListener(); // Now setup auth listener
+    _setupAuthListener(); 
     _checkInitialAuth();
   }
 
-  /// ✅ Check initial auth state after splash
   void _checkInitialAuth() {
     final client = Supabase.instance.client;
     final session = client.auth.currentSession;
@@ -112,7 +104,6 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  /// ✅ Navigation helpers
   void _navigateToChangePassword() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _navigatorKey.currentState?.pushReplacementNamed('/change-password');

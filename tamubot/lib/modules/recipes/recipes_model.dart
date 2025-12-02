@@ -1,4 +1,3 @@
-// lib/modules/recipes/recipe_models.dart
 
 class SavedRecipe {
   final String id;

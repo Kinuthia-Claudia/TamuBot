@@ -255,8 +255,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   if (_rememberMe) {
                                     await _saveRememberMeFlag(true);
                                   }
-                                } else if (result is String &&
-                                    result.length > 10) {
+                                } else if (result.length > 10) {
                                   if (_rememberMe) {
                                     await _saveRememberMeFlag(true);
                                   }

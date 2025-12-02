@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class AuthService {
   final SupabaseClient _client = Supabase.instance.client;
 
-  // ✅ Sign up with email & password
+  //  Sign up with email & password
   Future<AuthResponse> signUp({
     required String email,
     required String password,
@@ -16,7 +16,7 @@ class AuthService {
     return response;
   }
 
-  // ✅ Sign in with email & password
+  // Sign in with email & password
   Future<AuthResponse> signIn({
     required String email,
     required String password,
@@ -32,7 +32,7 @@ class AuthService {
   Future<void> sendEmailOtp(String email) async {
     await _client.auth.signInWithOtp(
       email: email,
-      emailRedirectTo: 'tamubot://auth/callback', // same redirect you use in signUp
+      emailRedirectTo: 'tamubot://auth/callback', 
     );
   }
 
@@ -48,13 +48,13 @@ class AuthService {
     }
   }
 
-  // ✅ Send password reset email
+  //  Send password reset email
   Future<void> resetPassword(String email) async {
     await _client.auth.resetPasswordForEmail(email,
         redirectTo: 'tamubot://auth/callback');
   }
 
-  // ✅ Update password
+  //  Update password
   Future<User?> updatePassword(String newPassword) async {
     final response = await _client.auth.updateUser(
       UserAttributes(password: newPassword),
@@ -62,11 +62,11 @@ class AuthService {
     return response.user;
   }
 
-  // ✅ Sign out
+  //  Sign out
   Future<void> signOut() async {
     await _client.auth.signOut();
   }
 
-  // ✅ Get current user
+  // Get current user
   User? get currentUser => _client.auth.currentUser;
 }

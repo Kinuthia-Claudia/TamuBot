@@ -1,4 +1,3 @@
-// lib/modules/meal_plans/meal_plan_detail_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tamubot/modules/recipes/add_meal.dart';
@@ -7,7 +6,7 @@ import 'package:tamubot/modules/recipes/mealplan_provider.dart';
 import 'package:tamubot/modules/recipes/pdf_exports.dart';
 
 class MealPlanDetailPage extends ConsumerWidget {
-  final String mealPlanId; // Change from MealPlan to mealPlanId
+  final String mealPlanId; 
 
   const MealPlanDetailPage({super.key, required this.mealPlanId});
 
@@ -100,7 +99,7 @@ class _MealPlanDetailContent extends ConsumerWidget {
                     ...mealTypes.map((mealType) => _buildMealCell(
                       context,
                       ref,
-                      mealPlan.id, // Pass mealPlanId instead of mealPlan
+                      mealPlan.id,
                       dayNumber,
                       mealType,
                       _findMealForType(dayMeals, mealType),

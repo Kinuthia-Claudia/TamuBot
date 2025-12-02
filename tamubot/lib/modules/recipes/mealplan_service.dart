@@ -1,4 +1,3 @@
-// lib/modules/meal_plans/meal_plan_service.dart
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tamubot/modules/recipes/mealplan_model.dart';
 

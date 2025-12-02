@@ -1,4 +1,3 @@
-// lib/modules/meal_plans/create_meal_plan_dialog.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tamubot/modules/recipes/mealplan_provider.dart';
@@ -17,7 +16,7 @@ class _CreateMealPlanDialogState extends ConsumerState<CreateMealPlanDialog> {
   final _formKey = GlobalKey<FormState>();
   bool _isCreating = false;
 
-  final List<String> _dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  
   final List<String> _shortDayNames = ['M', 'T', 'W', 'Th', 'F', 'Sa', 'Su'];
 
   @override

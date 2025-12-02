@@ -12,7 +12,7 @@ final settingsProvider =
   (ref) => SettingsController(),
 );
 
-/// 🧩 SETTINGS STATE
+///  SETTINGS STATE
 class SettingsState {
   final int defaultTimer;
   final bool vibrateOnTimerEnd;
@@ -61,7 +61,7 @@ class SettingsState {
       );
 }
 
-/// 🧭 CONTROLLER
+/// CONTROLLER
 class SettingsController extends StateNotifier<SettingsState> {
   SettingsController()
       : super(const SettingsState(
@@ -125,7 +125,7 @@ class SettingsController extends StateNotifier<SettingsState> {
     );
   }
 
-  /// 🚨 Delete account via Supabase Edge Function
+  ///  Delete account via Supabase Edge Function
   Future<String?> deleteAccount() async {
     try {
       final client = Supabase.instance.client;
@@ -159,7 +159,7 @@ class SettingsController extends StateNotifier<SettingsState> {
   }
 }
 
-/// 🧱 SETTINGS PAGE UI
+///  SETTINGS PAGE UI
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 

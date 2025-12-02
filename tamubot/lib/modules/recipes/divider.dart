@@ -1,4 +1,3 @@
-// lib/modules/recipes/recipes_divider_page.dart
 import 'package:flutter/material.dart';
 import 'package:tamubot/modules/recipes/recipes_page.dart';
 import 'package:tamubot/modules/recipes/mealplan_page.dart';

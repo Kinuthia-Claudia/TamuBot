@@ -1,4 +1,3 @@
-// lib/widgets/loading_bubbles.dart
 
 import 'package:flutter/material.dart';
 

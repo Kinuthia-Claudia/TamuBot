@@ -1,4 +1,3 @@
-// lib/modules/meal_plans/mealplan_provider.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:tamubot/modules/recipes/mealplan_model.dart';
@@ -62,7 +61,7 @@ class MealPlanNotifier extends StateNotifier<AsyncValue<List<MealPlan>>> {
       );
       
       await service.createMealPlan(newMealPlan);
-      await loadMealPlans(); // Reload to get the updated list
+      await loadMealPlans(); 
     } catch (e, st) {
       if (!_isDisposed) {
         state = AsyncValue.error(e, st);
@@ -75,7 +74,7 @@ class MealPlanNotifier extends StateNotifier<AsyncValue<List<MealPlan>>> {
     
     try {
       await service.updateMealPlan(mealPlan);
-      await loadMealPlans(); // Reload to get the updated list
+      await loadMealPlans(); 
     } catch (e, st) {
       if (!_isDisposed) {
         state = AsyncValue.error(e, st);
@@ -88,7 +87,7 @@ class MealPlanNotifier extends StateNotifier<AsyncValue<List<MealPlan>>> {
     
     try {
       await service.deleteMealPlan(mealPlanId);
-      await loadMealPlans(); // Reload to get the updated list
+      await loadMealPlans(); 
     } catch (e, st) {
       if (!_isDisposed) {
         state = AsyncValue.error(e, st);
@@ -109,7 +108,7 @@ class MealPlanNotifier extends StateNotifier<AsyncValue<List<MealPlan>>> {
         dayIndex: dayIndex,
         meal: meal,
       );
-      await loadMealPlans(); // Reload to get the updated list
+      await loadMealPlans(); 
     } catch (e, st) {
       if (!_isDisposed) {
         state = AsyncValue.error(e, st);
@@ -130,7 +129,7 @@ class MealPlanNotifier extends StateNotifier<AsyncValue<List<MealPlan>>> {
         dayIndex: dayIndex,
         mealId: mealId,
       );
-      await loadMealPlans(); // Reload to get the updated list
+      await loadMealPlans(); 
     } catch (e, st) {
       if (!_isDisposed) {
         state = AsyncValue.error(e, st);

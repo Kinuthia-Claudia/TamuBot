@@ -1,4 +1,3 @@
-// lib/modules/recipes/recipes_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tamubot/modules/recipes/myrecipes_provider.dart';

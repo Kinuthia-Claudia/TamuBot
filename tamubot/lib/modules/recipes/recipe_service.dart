@@ -1,5 +1,3 @@
-// lib/modules/recipes/recipes_service.dart
-import 'dart:convert';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RecipeData {

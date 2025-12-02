@@ -1,5 +1,3 @@
-// lib/modules/recipes/recipes_provider.dart
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart';
 import 'package:tamubot/modules/authentication/auth_controller.dart';
