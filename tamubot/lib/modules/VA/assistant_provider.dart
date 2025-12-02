@@ -148,7 +148,24 @@ Future<void> processAudioInput(File audioFile) async {
       error: 'Audio processing failed: $e',
     );
   }
-}  // TTS Methods
+}  
+// TTS Methods
+// Add these methods to your AssistantProvider class
+
+void setPreloadedState({
+  required List<AssistantMessage> messages,
+  required RecipeSession recipeSession,
+}) {
+  state = state.copyWith(
+    messages: messages,
+    recipeSession: recipeSession,
+  );
+}
+
+void addMessage(AssistantMessage message) {
+  final messages = List<AssistantMessage>.from(state.messages)..add(message);
+  state = state.copyWith(messages: messages);
+}
   Future<void> speakMessage(AssistantMessage message) async {
     final ttsSettings = _ref.read(ttsSettingsProvider);
     

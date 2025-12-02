@@ -14,61 +14,147 @@ class RecipesPage extends ConsumerWidget {
     final user = ref.watch(authControllerProvider).user;
 
     if (user == null) {
-      return const Scaffold(
+      return Scaffold(
+        backgroundColor: Colors.green.shade50,
         body: Center(
-          child: Text('Please sign in to view your recipes'),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            margin: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.green.shade100,
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.person_outline, size: 64, color: Colors.green.shade600),
+                const SizedBox(height: 16),
+                Text(
+                  'Please Sign In',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green.shade800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Sign in to view your saved recipes',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.green.shade700,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
         ),
       );
     }
 
     return Scaffold(
+      backgroundColor: Colors.green.shade50,
       appBar: AppBar(
         title: const Text('My Recipes'),
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.green.shade600,
+        foregroundColor: Colors.white,
         elevation: 0,
       ),
       body: recipesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              Text('Error loading recipes', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              Text(
-                error.toString(),
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
-              ),
-            ],
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            margin: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.green.shade100,
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.red.shade400),
+                const SizedBox(height: 16),
+                Text(
+                  'Error Loading Recipes',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green.shade800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  error.toString(),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.green.shade700,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         data: (recipes) {
           if (recipes.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.menu_book, size: 64, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text(
-                    'No saved recipes yet',
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Your saved recipes will appear here',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ],
+            return Center(
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                margin: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.green.shade100,
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.menu_book, size: 64, color: Colors.green.shade600),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No Saved Recipes Yet',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green.shade800,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Your saved recipes will appear here',
+                      style: TextStyle(
+                        color: Colors.green.shade700,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(24),
             itemCount: recipes.length,
             itemBuilder: (context, index) {
               final recipe = recipes[index];
@@ -97,8 +183,19 @@ class _ExpandableRecipeCardState extends ConsumerState<_ExpandableRecipeCard> {
   Widget build(BuildContext context) {
     final recipe = widget.recipe;
     
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.shade100,
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
       child: ExpansionTile(
         key: Key(recipe.id),
         initiallyExpanded: false,
@@ -110,14 +207,18 @@ class _ExpandableRecipeCardState extends ConsumerState<_ExpandableRecipeCard> {
         },
         title: Text(
           recipe.recipeTitle,
-          style: Theme.of(context).textTheme.titleLarge,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.green.shade800,
+          ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: _buildRecipeSubtitle(recipe),
         trailing: Icon(
           _isExpanded ? Icons.expand_less : Icons.expand_more,
-          color: Colors.grey,
+          color: Colors.green.shade600,
         ),
         children: [
           Padding(
@@ -137,7 +238,10 @@ class _ExpandableRecipeCardState extends ConsumerState<_ExpandableRecipeCard> {
         const SizedBox(height: 4),
         Text(
           'Saved ${_formatDate(recipe.createdAt)}',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
+          style: TextStyle(
+            color: Colors.green.shade700,
+            fontSize: 14,
+          ),
         ),
       ],
     );
@@ -161,13 +265,13 @@ class _ExpandableRecipeCardState extends ConsumerState<_ExpandableRecipeCard> {
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(
               children: [
-                const Icon(Icons.circle, size: 8, color: Colors.grey),
+                Icon(Icons.circle, size: 8, color: Colors.green.shade600),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     ingredient,
                     style: TextStyle(
-                      color: ingredient.contains('(substitute:') ? Colors.orange : null,
+                      color: ingredient.contains('(substitute:') ? Colors.orange.shade700 : Colors.green.shade800,
                     ),
                   ),
                 ),
@@ -191,16 +295,16 @@ class _ExpandableRecipeCardState extends ConsumerState<_ExpandableRecipeCard> {
                   width: 24,
                   height: 24,
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade100,
+                    color: Colors.green.shade100,
                     shape: BoxShape.circle,
                   ),
                   child: Center(
                     child: Text(
                       '${entry.key + 1}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue,
+                        color: Colors.green.shade800,
                       ),
                     ),
                   ),
@@ -209,7 +313,10 @@ class _ExpandableRecipeCardState extends ConsumerState<_ExpandableRecipeCard> {
                 Expanded(
                   child: Text(
                     entry.value,
-                    style: const TextStyle(fontSize: 14),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.green.shade800,
+                    ),
                   ),
                 ),
               ],
@@ -228,22 +335,24 @@ class _ExpandableRecipeCardState extends ConsumerState<_ExpandableRecipeCard> {
   Widget _buildNutritionSection(Map<String, dynamic> nutrition) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blue.shade100),
+        color: Colors.green.shade50,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.green.shade100),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Nutrition Information',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: Colors.blue.shade800,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.green.shade800,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -276,9 +385,10 @@ class _ExpandableRecipeCardState extends ConsumerState<_ExpandableRecipeCard> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+      style: TextStyle(
+        fontSize: 18,
         fontWeight: FontWeight.bold,
-        color: Colors.blue.shade800,
+        color: Colors.green.shade800,
       ),
     );
   }
@@ -288,19 +398,28 @@ class _ExpandableRecipeCardState extends ConsumerState<_ExpandableRecipeCard> {
       children: [
         // Rating
         if (recipe.userRating == null)
-          TextButton.icon(
-            icon: const Icon(Icons.star_border),
-            label: const Text('Add Rating'),
-            onPressed: () {
-              _showRatingDialog(context, ref, recipe);
-            },
+          SizedBox(
+            height: 45,
+            child: TextButton.icon(
+              icon: Icon(Icons.star_border, color: Colors.green.shade700),
+              label: Text(
+                'Add Rating',
+                style: TextStyle(
+                  color: Colors.green.shade700,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onPressed: () {
+                _showRatingDialog(context, ref, recipe);
+              },
+            ),
           ),
         
         const Spacer(),
         
         // Delete
         IconButton(
-          icon: const Icon(Icons.delete_outline, color: Colors.red),
+          icon: Icon(Icons.delete_outline, color: Colors.red.shade400),
           onPressed: () {
             _showDeleteDialog(context, ref, recipe);
           },
@@ -333,23 +452,44 @@ class _ExpandableRecipeCardState extends ConsumerState<_ExpandableRecipeCard> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Recipe'),
-        content: Text('Are you sure you want to delete "${recipe.recipeTitle}"?'),
+        backgroundColor: Colors.green.shade50,
+        title: Text(
+          'Delete Recipe',
+          style: TextStyle(color: Colors.green.shade800),
+        ),
+        content: Text(
+          'Are you sure you want to delete "${recipe.recipeTitle}"?',
+          style: TextStyle(color: Colors.green.shade700),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.green.shade700),
+            ),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () {
               ref.read(recipesProvider.notifier).deleteRecipe(recipe.id);
               Navigator.of(context).pop();
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('"${recipe.recipeTitle}" deleted')),
+                SnackBar(
+                  content: Text('"${recipe.recipeTitle}" deleted'),
+                  backgroundColor: Colors.green.shade600,
+                ),
               );
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -383,14 +523,15 @@ class _NutritionChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Chip(
-      avatar: Icon(icon, size: 16),
+      avatar: Icon(icon, size: 16, color: Colors.green.shade700),
       label: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 10)),
-          Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          Text(label, style: TextStyle(fontSize: 10, color: Colors.green.shade700)),
+          Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green.shade800)),
         ],
       ),
+      backgroundColor: Colors.green.shade50,
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       visualDensity: VisualDensity.compact,
     );
@@ -421,13 +562,19 @@ class _RatingDialogState extends ConsumerState<_RatingDialog> {
       if (mounted) {
         Navigator.of(context).pop();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Rating saved!')),
+          SnackBar(
+            content: const Text('Rating saved!'),
+            backgroundColor: Colors.green.shade600,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save rating: $e')),
+          SnackBar(
+            content: Text('Failed to save rating: $e'),
+            backgroundColor: Colors.red.shade400,
+          ),
         );
       }
     }
@@ -436,11 +583,19 @@ class _RatingDialogState extends ConsumerState<_RatingDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Rate Recipe'),
+      backgroundColor: Colors.green.shade50,
+      title: Text(
+        'Rate Recipe',
+        style: TextStyle(color: Colors.green.shade800),
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(widget.recipe.recipeTitle),
+          Text(
+            widget.recipe.recipeTitle,
+            style: TextStyle(color: Colors.green.shade700),
+            textAlign: TextAlign.center,
+          ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -465,11 +620,23 @@ class _RatingDialogState extends ConsumerState<_RatingDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(
+            'Cancel',
+            style: TextStyle(color: Colors.green.shade700),
+          ),
         ),
         ElevatedButton(
           onPressed: _selectedRating == 0 ? null : _submitRating,
-          child: const Text('Submit Rating'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green.shade600,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+          ),
+          child: const Text(
+            'Submit Rating',
+            style: TextStyle(color: Colors.white),
+          ),
         ),
       ],
     );

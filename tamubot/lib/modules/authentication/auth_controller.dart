@@ -56,9 +56,7 @@ class AuthController extends StateNotifier<AuthState> {
 
       if (user == null) {
         state = AuthState(isAuthenticated: false);
-        ref.invalidate(profileProvider);
-        ref.invalidate(recipesProvider);
-        ref.invalidate(assistantServiceProvider);
+        
         return;
       }
 
@@ -66,9 +64,7 @@ class AuthController extends StateNotifier<AuthState> {
 
       // Ensure the profile exists for every logged-in user
       _ensureProfileExists(user);
-      ref.invalidate(profileProvider);
-      ref.invalidate(recipesProvider);
-      ref.invalidate(assistantServiceProvider);
+    
     });
   }
 
@@ -127,10 +123,7 @@ class AuthController extends StateNotifier<AuthState> {
 
         print('✅ Profile inserted');
 
-        // Reset providers
-        ref.invalidate(profileProvider);
-        ref.invalidate(recipesProvider);
-        ref.invalidate(assistantServiceProvider);
+    
 
         return "Please check your email to confirm your account.";
       }
@@ -158,10 +151,7 @@ class AuthController extends StateNotifier<AuthState> {
 
       state = state.copyWith(isAuthenticated: true, user: user);
 
-      // Reset providers after login
-      ref.invalidate(profileProvider);
-      ref.invalidate(recipesProvider);
-      ref.invalidate(assistantServiceProvider);
+    
 
       return null;
     } on AuthException catch (e) {
@@ -246,9 +236,7 @@ class AuthController extends StateNotifier<AuthState> {
     await _client.auth.signOut();
     state = AuthState(isAuthenticated: false);
 
-    ref.invalidate(profileProvider);
-    ref.invalidate(recipesProvider);
-    ref.invalidate(assistantServiceProvider);
+   
   }
 
   // ---------------------------------------------------------

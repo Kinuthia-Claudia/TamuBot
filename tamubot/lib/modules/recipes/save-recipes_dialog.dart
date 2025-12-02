@@ -36,7 +36,7 @@ class _SaveRecipeDialogState extends ConsumerState<SaveRecipeDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${widget.recipeData.dish} saved successfully!'),
-            backgroundColor: Colors.green,
+            backgroundColor: Colors.green.shade600,
           ),
         );
       }
@@ -45,7 +45,7 @@ class _SaveRecipeDialogState extends ConsumerState<SaveRecipeDialog> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to save recipe: $e'),
-            backgroundColor: Colors.red,
+            backgroundColor: Colors.red.shade400,
           ),
         );
       }
@@ -59,7 +59,17 @@ class _SaveRecipeDialogState extends ConsumerState<SaveRecipeDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Save Recipe'),
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      title: Text(
+        'Save Recipe',
+        style: TextStyle(
+          color: Colors.green.shade800,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -67,7 +77,11 @@ class _SaveRecipeDialogState extends ConsumerState<SaveRecipeDialog> {
           children: [
             Text(
               widget.recipeData.dish,
-              style: Theme.of(context).textTheme.titleLarge,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.green.shade800,
+              ),
             ),
             const SizedBox(height: 16),
             const Text('Rate this recipe:'),
@@ -102,6 +116,7 @@ class _SaveRecipeDialogState extends ConsumerState<SaveRecipeDialog> {
                       _isFavorite = value ?? false;
                     });
                   },
+                  activeColor: Colors.green.shade600,
                 ),
                 const Text('Add to favorites'),
               ],
@@ -112,17 +127,32 @@ class _SaveRecipeDialogState extends ConsumerState<SaveRecipeDialog> {
       actions: [
         TextButton(
           onPressed: _isSaving ? null : () => Navigator.of(context).pop(false),
-          child: const Text('Not Now'),
+          child: Text(
+            'Not Now',
+            style: TextStyle(color: Colors.green.shade700),
+          ),
         ),
         ElevatedButton(
           onPressed: _isSaving ? null : _saveRecipe,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green.shade600,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+          ),
           child: _isSaving 
               ? const SizedBox(
                   height: 16,
                   width: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
                 )
-              : const Text('Save Recipe'),
+              : const Text(
+                  'Save Recipe',
+                  style: TextStyle(color: Colors.white),
+                ),
         ),
       ],
     );

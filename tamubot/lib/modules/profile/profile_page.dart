@@ -102,7 +102,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final profileAsync = ref.watch(profileProvider);
 
     return Scaffold(
+      backgroundColor: Colors.green.shade50,
       appBar: AppBar(
+        backgroundColor: Colors.green.shade600,
+        foregroundColor: Colors.white,
         title: const Text('Profile'),
         actions: [
           profileAsync.when(
@@ -136,16 +139,35 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text("No profile found"),
-          const SizedBox(height: 12),
+          Text(
+            "No profile found",
+            style: TextStyle(
+              fontSize: 18,
+              color: Colors.green.shade800,
+            ),
+          ),
+          const SizedBox(height: 16),
           ElevatedButton(
-            child: const Text("Retry"),
             onPressed: () {
               final user = Supabase.instance.client.auth.currentUser;
               if (user != null) {
                 ref.read(profileProvider.notifier).load(user.id);
               }
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green.shade600,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              elevation: 3,
+            ),
+            child: const Text(
+              "Retry",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -154,60 +176,124 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   Widget _buildProfileView(ProfileModel profile) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          GestureDetector(
-            onTap: _isEditing ? _pickAvatar : null,
-            child: CircleAvatar(
-              radius: 50,
-              backgroundImage: _pickedAvatar != null
-                  ? FileImage(_pickedAvatar!)
-                  : (profile.avatarUrl != null
-                      ? NetworkImage(profile.avatarUrl!)
-                      : null),
-              child: (_pickedAvatar == null && profile.avatarUrl == null)
-                  ? const Icon(Icons.person, size: 50)
-                  : null,
+          // HEADER
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            margin: const EdgeInsets.only(bottom: 24),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.green.shade100,
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                GestureDetector(
+                  onTap: _isEditing ? _pickAvatar : null,
+                  child: CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Colors.green.shade100,
+                    backgroundImage: _pickedAvatar != null
+                        ? FileImage(_pickedAvatar!)
+                        : (profile.avatarUrl != null
+                            ? NetworkImage(profile.avatarUrl!)
+                            : null),
+                    child: (_pickedAvatar == null && profile.avatarUrl == null)
+                        ? Icon(Icons.person, size: 50, color: Colors.green.shade600)
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                if (!_isEditing) ...[
+                  Text(
+                    profile.username ?? "No username",
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green.shade800,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    profile.email ?? "-",
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.green.shade700,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    profile.bio ?? "No bio",
+                    style: TextStyle(
+                      color: Colors.green.shade800,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ] else ...[
+                  TextField(
+                    controller: _usernameCtl,
+                    decoration: InputDecoration(
+                      labelText: "Username",
+                      filled: true,
+                      fillColor: Colors.green.shade50,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide.none,
+                      ),
+                      prefixIcon: const Icon(Icons.person),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _bioCtl,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: "Bio",
+                      filled: true,
+                      fillColor: Colors.green.shade50,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide.none,
+                      ),
+                      prefixIcon: const Icon(Icons.description),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
 
-          const SizedBox(height: 20),
-
-          // ---------------------------
-          // VIEW vs EDIT USERNAME/BIO
-          // ---------------------------
-          if (!_isEditing) ...[
-            Text(
-              profile.username ?? "No username",
-              style: Theme.of(context).textTheme.headlineSmall,
+          // DIETARY PREFERENCES SECTION
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.green.shade100,
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
             ),
-            const SizedBox(height: 6),
-            Text(profile.email ?? "-", style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: 16),
-            Text(profile.bio ?? "No bio"),
-          ] else ...[
-            TextField(
-              controller: _usernameCtl,
-              decoration: const InputDecoration(labelText: "Username"),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _bioCtl,
-              maxLines: 3,
-              decoration: const InputDecoration(labelText: "Bio"),
-            ),
-          ],
-
-          const SizedBox(height: 24),
-
-          _buildPreferencesSection(),
+            child: _buildPreferencesSection(),
+          ),
 
           const SizedBox(height: 30),
 
-          // -----------------------------
           // ACTION BUTTONS
-          // -----------------------------
           if (_isEditing) _buildEditingButtons() else _buildViewButtons(),
         ],
       ),
@@ -218,9 +304,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Dietary preferences",
-            style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 10),
+        Text(
+          "Dietary Preferences",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.green.shade800,
+          ),
+        ),
+        const SizedBox(height: 16),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -229,6 +321,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               FilterChip(
                 label: Text(option),
                 selected: _prefs.contains(option),
+                selectedColor: Colors.green.shade200,
+                checkmarkColor: Colors.green.shade800,
                 onSelected: _isEditing
                     ? (selected) {
                         setState(() {
@@ -239,29 +333,55 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ),
             if (_isEditing)
               ActionChip(
-                label: const Text("Add custom"),
+                label: Text(
+                  "Add custom",
+                  style: TextStyle(color: Colors.green.shade700),
+                ),
+                backgroundColor: Colors.green.shade50,
                 onPressed: () async {
                   final custom = await showDialog<String>(
                     context: context,
                     builder: (context) {
                       final ctl = TextEditingController();
                       return AlertDialog(
-                        title: const Text("Add dietary preference"),
+                        backgroundColor: Colors.green.shade50,
+                        title: Text(
+                          "Add Dietary Preference",
+                          style: TextStyle(color: Colors.green.shade800),
+                        ),
                         content: TextField(
                           controller: ctl,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             hintText: "e.g. no garlic",
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
                           ),
                         ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(context),
-                            child: const Text("Cancel"),
+                            child: Text(
+                              "Cancel",
+                              style: TextStyle(color: Colors.green.shade700),
+                            ),
                           ),
                           ElevatedButton(
                             onPressed: () =>
                                 Navigator.pop(context, ctl.text.trim()),
-                            child: const Text("Add"),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green.shade600,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                            ),
+                            child: const Text(
+                              "Add",
+                              style: TextStyle(color: Colors.white),
+                            ),
                           )
                         ],
                       );
@@ -273,7 +393,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 },
               )
             else if (_prefs.isEmpty)
-              const Text("No dietary preferences set."),
+              Text(
+                "No dietary preferences set.",
+                style: TextStyle(color: Colors.green.shade700),
+              ),
           ],
         ),
       ],
@@ -284,25 +407,57 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     return Row(
       children: [
         Expanded(
-          child: ElevatedButton(
-            onPressed: _saving ? null : _save,
-            child: _saving
-                ? const SizedBox(
-                    height: 20, width: 20, child: CircularProgressIndicator())
-                : const Text("Save"),
+          child: SizedBox(
+            height: 55,
+            child: ElevatedButton(
+              onPressed: _saving ? null : _save,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green.shade600,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                elevation: 3,
+              ),
+              child: _saving
+                  ? const SizedBox(
+                      height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white))
+                  : const Text(
+                      "Save",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 17,
+                      ),
+                    ),
+            ),
           ),
         ),
         const SizedBox(width: 12),
-        OutlinedButton(
-          onPressed: _saving
-              ? null
-              : () {
-                  setState(() {
-                    _isEditing = false;
-                    _pickedAvatar = null;
-                  });
-                },
-          child: const Text("Cancel"),
+        SizedBox(
+          height: 55,
+          child: OutlinedButton(
+            onPressed: _saving
+                ? null
+                : () {
+                    setState(() {
+                      _isEditing = false;
+                      _pickedAvatar = null;
+                    });
+                  },
+            style: OutlinedButton.styleFrom(
+              side: BorderSide(color: Colors.green.shade600),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            child: Text(
+              "Cancel",
+              style: TextStyle(
+                color: Colors.green.shade600,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
         ),
       ],
     );
@@ -311,20 +466,44 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Widget _buildViewButtons() {
     return Column(
       children: [
-        ElevatedButton(
-          onPressed: () {
-            final profile = ref.read(profileProvider).value;
-            if (profile != null) _startEditing(profile);
-          },
-          child: const Text("Edit profile"),
+        SizedBox(
+          width: double.infinity,
+          height: 55,
+          child: ElevatedButton(
+            onPressed: () {
+              final profile = ref.read(profileProvider).value;
+              if (profile != null) _startEditing(profile);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green.shade600,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              elevation: 3,
+            ),
+            child: const Text(
+              "Edit Profile",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 17,
+              ),
+            ),
+          ),
         ),
         const SizedBox(height: 16),
         TextButton.icon(
           onPressed: () async {
             await Supabase.instance.client.auth.signOut();
           },
-          icon: const Icon(Icons.logout),
-          label: const Text("Log out"),
+          icon: Icon(Icons.logout, color: Colors.green.shade700),
+          label: Text(
+            "Log out",
+            style: TextStyle(
+              color: Colors.green.shade700,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ],
     );

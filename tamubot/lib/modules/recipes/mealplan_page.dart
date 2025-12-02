@@ -14,9 +14,11 @@ class MealPlansPage extends ConsumerWidget {
     final mealPlansAsync = ref.watch(mealPlanProvider);
 
     return Scaffold(
+      backgroundColor: Colors.green.shade50,
       appBar: AppBar(
         title: const Text('My Meal Plans'),
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.green.shade600,
+        foregroundColor: Colors.white,
         elevation: 0,
         actions: [
           // Share/Export button could go here
@@ -25,19 +27,43 @@ class MealPlansPage extends ConsumerWidget {
       body: mealPlansAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
-              Text('Error loading meal plans', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              Text(
-                error.toString(),
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.grey),
-              ),
-            ],
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            margin: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(28),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.green.shade100,
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.error_outline, size: 64, color: Colors.red.shade400),
+                const SizedBox(height: 16),
+                Text(
+                  'Error Loading Meal Plans',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green.shade800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  error.toString(),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.green.shade700,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         data: (mealPlans) {
@@ -46,7 +72,7 @@ class MealPlansPage extends ConsumerWidget {
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(24),
             itemCount: mealPlans.length,
             itemBuilder: (context, index) {
               final mealPlan = mealPlans[index];
@@ -62,6 +88,8 @@ class MealPlansPage extends ConsumerWidget {
             builder: (context) => const CreateMealPlanDialog(),
           );
         },
+        backgroundColor: Colors.green.shade600,
+        foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),
     );
@@ -77,51 +105,80 @@ class _MealPlanCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final dayNames = ['M', 'T', 'W', 'Th', 'F', 'Sa', 'Su'];
     
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.green.shade100,
+            blurRadius: 18,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
       child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
         leading: Container(
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: Colors.blue.shade50,
+            color: Colors.green.shade50,
             shape: BoxShape.circle,
           ),
-          child: Icon(Icons.restaurant_menu, color: Colors.blue.shade700),
+          child: Icon(Icons.restaurant_menu, color: Colors.green.shade700),
         ),
         title: Text(
           mealPlan.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: Colors.green.shade800,
+          ),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Text(
               '${mealPlan.selectedDays.length} days • ${_countTotalMeals(mealPlan)} meals',
-              style: Theme.of(context).textTheme.bodySmall,
+              style: TextStyle(
+                color: Colors.green.shade700,
+                fontSize: 14,
+              ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             Wrap(
               spacing: 4,
               children: mealPlan.selectedDays.map((dayIndex) {
-                return Chip(
-                  label: Text(dayNames[dayIndex]),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    dayNames[dayIndex],
+                    style: TextStyle(
+                      color: Colors.green.shade800,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 );
               }).toList(),
             ),
           ],
         ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+        trailing: Icon(Icons.arrow_forward_ios, size: 16, color: Colors.green.shade600),
         onTap: () {
-        Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (context) => MealPlanDetailPage(mealPlanId: mealPlan.id),
-  ),
-);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => MealPlanDetailPage(mealPlanId: mealPlan.id),
+            ),
+          );
         },
       ),
     );
@@ -142,32 +199,72 @@ class _EmptyMealPlansState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.calendar_today, size: 80, color: Colors.grey.shade400),
-          const SizedBox(height: 16),
-          Text(
-            'No Meal Plans Yet',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.grey),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Create your first meal plan to get started',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => const CreateMealPlanDialog(),
-              );
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Create Meal Plan'),
-          ),
-        ],
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        margin: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(28),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.green.shade100,
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.calendar_today, size: 80, color: Colors.green.shade600),
+            const SizedBox(height: 16),
+            Text(
+              'No Meal Plans Yet',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.green.shade800,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Create your first meal plan to get started',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.green.shade700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              height: 55,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => const CreateMealPlanDialog(),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade600,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  elevation: 3,
+                ),
+                icon: const Icon(Icons.add, color: Colors.white),
+                label: const Text(
+                  'Create Meal Plan',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
